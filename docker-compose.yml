@@ -1,0 +1,23 @@
+# Optional: run the app with PostgreSQL instead of SQLite.
+# Not needed for the free local setup (see README). Untested on this machine (Docker is not installed here).
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: creator_finder
+      POSTGRES_USER: creator_finder
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://creator_finder:${POSTGRES_PASSWORD}@db:5432/creator_finder
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      APIFY_TOKEN: ${APIFY_TOKEN:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+volumes:
+  pgdata:
