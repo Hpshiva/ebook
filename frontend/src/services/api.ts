@@ -40,6 +40,10 @@ export function errorMessage(error: unknown): string {
         .join("; ");
     }
     if (!error.response) return "Cannot reach the server. Is the backend running?";
+    if ([404, 405].includes(error.response.status) && typeof error.response.data === "string") {
+      // A static host answered instead of the API: the frontend is deployed without a backend.
+      return "The backend is not connected. Set VITE_API_URL to the backend's address and redeploy the frontend.";
+    }
     return `Request failed (${error.response.status})`;
   }
   return error instanceof Error ? error.message : "Something went wrong";

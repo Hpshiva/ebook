@@ -27,9 +27,18 @@ def _secret_key() -> str:
     return key
 
 
+def _database_url() -> str:
+    """Default to local SQLite. Hosts hand out postgres:// or postgresql:// URLs;
+    point both at the psycopg 3 driver this app installs."""
+    url = os.getenv("DATABASE_URL") or f"sqlite:///{BACKEND_DIR / 'data' / 'creator_finder.db'}"
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+
 class Config:
-    # "or" (not a getenv default) so an empty line in .env falls back to the default too.
-    database_url: str = os.getenv("DATABASE_URL") or f"sqlite:///{BACKEND_DIR / 'data' / 'creator_finder.db'}"
+    database_url: str = _database_url()
     secret_key: str = _secret_key()
     token_minutes: int = int(os.getenv("TOKEN_MINUTES") or "720")
     apify_token: str = os.getenv("APIFY_TOKEN", "")
