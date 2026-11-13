@@ -40,7 +40,12 @@ def create_app() -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"status": "ok"}
+        # "database" shows whether data will survive restarts: sqlite on a serverless
+        # host is temporary, postgresql is permanent. No secrets are exposed here.
+        import os
+
+        return {"status": "ok", "database": engine.dialect.name,
+                "secret_key_from_env": bool(os.getenv("SECRET_KEY"))}
 
     # Optional single-server deployment: serve the built React app if it exists.
     dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"

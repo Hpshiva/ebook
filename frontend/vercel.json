@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/((?!api/|assets/).*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://backend-six-alpha-71.vercel.app/api/:path*" },
+    { "source": "/((?!api/|assets/).*)", "destination": "/index.html" }
+  ]
 }
