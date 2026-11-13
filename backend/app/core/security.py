@@ -34,9 +34,38 @@ def verify_password(password: str, stored: str) -> bool:
         return False
 
 
-def create_token(user_id: int) -> str:
+_SECRET_ROW = "_secret_key"  # settings rows starting with "_" are internal and never returned by the API
+_cached_secret: str | None = None
+
+
+def signing_key(db: Session) -> str:
+    """The key that signs login sessions: SECRET_KEY from the environment if set,
+    otherwise one generated on first use and kept in the database, so it survives
+    restarts and is shared by every server instance."""
+    global _cached_secret
+    if config.secret_key:
+        return config.secret_key
+    if _cached_secret:
+        return _cached_secret
+    from sqlalchemy.exc import IntegrityError
+
+    from ..models import Setting
+
+    row = db.get(Setting, _SECRET_ROW)
+    if not row:
+        try:
+            db.add(Setting(key=_SECRET_ROW, value=secrets.token_urlsafe(48)))
+            db.commit()
+        except IntegrityError:  # another instance created it at the same moment
+            db.rollback()
+        row = db.get(Setting, _SECRET_ROW)
+    _cached_secret = str(row.value)
+    return _cached_secret
+
+
+def create_token(user_id: int, db: Session) -> str:
     exp = datetime.now(timezone.utc) + timedelta(minutes=config.token_minutes)
-    return jwt.encode({"sub": str(user_id), "exp": exp}, config.secret_key, algorithm="HS256")
+    return jwt.encode({"sub": str(user_id), "exp": exp}, signing_key(db), algorithm="HS256")
 
 
 def current_user(
@@ -47,7 +76,7 @@ def current_user(
     if not creds:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not signed in")
     try:
-        payload = jwt.decode(creds.credentials, config.secret_key, algorithms=["HS256"])
+        payload = jwt.decode(creds.credentials, signing_key(db), algorithms=["HS256"])
         user = db.get(User, int(payload["sub"]))
     except (jwt.PyJWTError, KeyError, ValueError):
         user = None

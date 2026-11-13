@@ -660,3 +660,28 @@ def test_settings_validation_and_rescoring(client):
     assert out["filters"]["min_followers"] == 20000 and out["filters"]["max_followers"] == 100000
     assert "hacker" not in out["filters"] and out["scoring_weights"]["contact"] == 30
     assert out["provider_mode"] == "mock" and out["monthly_budget_inr"] == 0  # safe defaults
+
+
+# ----------------------------------------------------------------- signing key storage
+def test_signing_key_is_generated_once_kept_in_the_database_and_never_exposed(anon, db, monkeypatch):
+    from app.core import security
+    from app.models import Setting
+
+    monkeypatch.setattr(config_module.config, "secret_key", "")
+    monkeypatch.setattr(security, "_cached_secret", None)
+    res = anon.post("/api/auth/setup", json={"email": "a@test.local", "name": "A", "password": PASSWORD})
+    token = res.json()["token"]
+    stored = db.get(Setting, "_secret_key").value
+    assert len(stored) >= 40
+
+    # A different server instance (empty cache) must accept the same session.
+    monkeypatch.setattr(security, "_cached_secret", None)
+    anon.headers["Authorization"] = f"Bearer {token}"
+    assert anon.get("/api/auth/me").status_code == 200
+    assert db.get(Setting, "_secret_key").value == stored  # not regenerated
+
+    settings = anon.get("/api/settings").json()
+    assert "_secret_key" not in settings and stored not in str(settings)
+    assert stored not in anon.get("/api/health").text
+    assert anon.put("/api/settings", json={"sender_name": "x"}).status_code == 200
+    assert db.get(Setting, "_secret_key").value == stored

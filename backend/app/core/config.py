@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import secrets
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -10,21 +9,6 @@ from dotenv import load_dotenv
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(BACKEND_DIR.parent / ".env")
 load_dotenv(BACKEND_DIR / ".env")
-
-
-def _secret_key() -> str:
-    """Use SECRET_KEY from the environment, else a persistent locally generated one."""
-    env = os.getenv("SECRET_KEY")
-    if env:
-        return env
-    path = BACKEND_DIR / "data" / ".secret_key"
-    if path.exists():
-        return path.read_text().strip()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    key = secrets.token_urlsafe(48)
-    path.write_text(key)
-    path.chmod(0o600)
-    return key
 
 
 def _database_url() -> str:
@@ -41,7 +25,8 @@ def _database_url() -> str:
 
 class Config:
     database_url: str = _database_url()
-    secret_key: str = _secret_key()
+    # Optional. When empty, a key is generated once and kept in the database (see core/security.py).
+    secret_key: str = os.getenv("SECRET_KEY") or ""
     token_minutes: int = int(os.getenv("TOKEN_MINUTES") or "720")
     apify_token: str = os.getenv("APIFY_TOKEN", "")
     cors_origins: list[str] = [

@@ -45,7 +45,7 @@ def create_app() -> FastAPI:
         import os
 
         return {"status": "ok", "database": engine.dialect.name,
-                "secret_key_from_env": bool(os.getenv("SECRET_KEY"))}
+                "signing_key": "environment" if os.getenv("SECRET_KEY") else "stored in database"}
 
     # Optional single-server deployment: serve the built React app if it exists.
     dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"

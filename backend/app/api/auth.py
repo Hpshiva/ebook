@@ -56,7 +56,7 @@ def setup(body: SetupIn, db: Session = Depends(get_db)):
     db.flush()
     audit(db, user, "setup", "Administrator account created")
     db.commit()
-    return {"token": create_token(user.id), "user": user_out(user)}
+    return {"token": create_token(user.id, db), "user": user_out(user)}
 
 
 @router.post("/auth/login")
@@ -70,7 +70,7 @@ def login(body: LoginIn, db: Session = Depends(get_db)):
         _failures[email] = recent + [time.time()]
         raise HTTPException(401, "Incorrect email or password")
     _failures.pop(email, None)
-    return {"token": create_token(user.id), "user": user_out(user)}
+    return {"token": create_token(user.id, db), "user": user_out(user)}
 
 
 @router.get("/auth/me")
