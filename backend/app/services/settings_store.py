@@ -4,7 +4,7 @@ import copy
 
 from sqlalchemy.orm import Session
 
-from ..core.config import DEFAULT_SETTINGS
+from ..core.config import DEFAULT_SETTINGS, config
 from ..models import AuditLog, Setting, utcnow
 
 
@@ -45,3 +45,27 @@ def update_settings(db: Session, patch: dict) -> dict:
 def audit(db: Session, user, action: str, detail: str = "") -> None:
     db.add(AuditLog(user_id=getattr(user, "id", None), user_email=getattr(user, "email", ""),
                     action=action, detail=detail[:2000]))
+
+
+APIFY_TOKEN_ROW = "_apify_token"  # internal row: never returned by the settings API
+
+
+def ensure_apify_token(db: Session) -> None:
+    """Make config.apify_token reflect the token saved in the app, when the
+    environment does not provide one. Called at the start of requests that need it,
+    because each server instance has its own memory."""
+    if config.apify_token_from_env:
+        return
+    row = db.get(Setting, APIFY_TOKEN_ROW)
+    if row and row.value:
+        config.apify_token, config.apify_token_from_app = str(row.value), True
+    elif config.apify_token_from_app:  # it was removed in the app
+        config.apify_token, config.apify_token_from_app = "", False
+
+
+def apify_token_source() -> str | None:
+    if config.apify_token_from_env:
+        return "server environment"
+    if config.apify_token_from_app:
+        return "saved in the app"
+    return "server environment" if config.apify_token else None

@@ -11,11 +11,12 @@ from ..core.db import get_db
 from ..core.security import admin_user, current_user, team_user
 from ..integrations.apify_provider import ApifyClient
 from ..integrations.base import ProviderError
-from ..models import (AuditLog, Campaign, CampaignCreator, Client, Creator, CreatorContact, OutreachMessage,
+from ..models import (AuditLog, Setting, Campaign, CampaignCreator, Client, Creator, CreatorContact, OutreachMessage,
                       SearchResult, SearchRun, User)
 from ..services import costs
 from ..services.exports import build_export, creator_row
-from ..services.settings_store import audit, get_settings, update_settings
+from ..services.settings_store import (APIFY_TOKEN_ROW, apify_token_source, audit, ensure_apify_token, get_settings,
+                                       set_setting, update_settings)
 from .campaigns import scoped_campaign
 
 router = APIRouter(prefix="/api", tags=["reports"])
@@ -122,6 +123,7 @@ def export(db: Session = Depends(get_db), user: User = Depends(current_user), fm
 
 @router.get("/costs")
 def cost_report(db: Session = Depends(get_db), _: User = Depends(team_user), check_provider: bool = False):
+    ensure_apify_token(db)
     settings = get_settings(db)
     limits, provider_note = None, None
     if check_provider:  # only on request: this is an external (free) call to Apify
@@ -170,7 +172,49 @@ class SettingsPatch(BaseModel):
 
 @router.get("/settings")
 def read_settings(db: Session = Depends(get_db), _: User = Depends(team_user)):
-    return {**get_settings(db), "apify_token_configured": bool(config.apify_token)}
+    return _settings_out(db, get_settings(db))
+
+
+def _settings_out(db: Session, settings: dict) -> dict:
+    ensure_apify_token(db)
+    return {**settings, "apify_token_configured": bool(config.apify_token), "apify_token_source": apify_token_source()}
+
+
+class TokenIn(BaseModel):
+    token: str
+
+
+@router.put("/settings/apify-token")
+def save_apify_token(body: TokenIn, db: Session = Depends(get_db), admin: User = Depends(admin_user)):
+    """Save the Apify token in the app's database. It is checked with Apify first and is never returned by any endpoint."""
+    token = body.token.strip()
+    if not 20 <= len(token) <= 200 or any(c.isspace() for c in token):
+        raise HTTPException(422, "That does not look like an Apify token")
+    if config.apify_token_from_env:
+        raise HTTPException(409, "A token is already set in the server environment; it takes priority")
+    from ..integrations.base import ProviderAuthError
+
+    limits = None
+    try:
+        limits = ApifyClient(token, max_retries=2).limits()
+    except ProviderAuthError:
+        raise HTTPException(400, "Apify rejected this token. Copy it again from Apify → Settings → API & Integrations.") from None
+    except ProviderError:
+        pass  # Apify unreachable right now: save it, the first search will verify it
+    set_setting(db, APIFY_TOKEN_ROW, token)
+    audit(db, admin, "apify_token.save", "Apify token saved in the app")
+    db.commit()
+    return {**_settings_out(db, get_settings(db)), "apify_limits": limits}
+
+
+@router.delete("/settings/apify-token")
+def remove_apify_token(db: Session = Depends(get_db), admin: User = Depends(admin_user)):
+    row = db.get(Setting, APIFY_TOKEN_ROW)
+    if row:
+        db.delete(row)
+        audit(db, admin, "apify_token.remove", "Apify token removed from the app")
+        db.commit()
+    return _settings_out(db, get_settings(db))
 
 
 @router.put("/settings")
@@ -204,7 +248,7 @@ def write_settings(body: SettingsPatch, db: Session = Depends(get_db), admin: Us
     out = update_settings(db, patch)
     audit(db, admin, "settings.update", ", ".join(patch.keys()))
     db.commit()
-    return {**out, "apify_token_configured": bool(config.apify_token)}
+    return _settings_out(db, out)
 
 
 @router.get("/audit")

@@ -10,3 +10,4 @@ frontend/playwright-report/
 frontend/e2e/.tmp/
 .DS_Store
 docs/live-test-fitness.xlsx
+docs/live-test-healthcare.xlsx

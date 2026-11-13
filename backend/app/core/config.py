@@ -28,7 +28,11 @@ class Config:
     # Optional. When empty, a key is generated once and kept in the database (see core/security.py).
     secret_key: str = os.getenv("SECRET_KEY") or ""
     token_minutes: int = int(os.getenv("TOKEN_MINUTES") or "720")
-    apify_token: str = os.getenv("APIFY_TOKEN", "")
+    # From the environment if set; otherwise loaded per request from the token an
+    # admin saved in the app (see services/settings_store.ensure_apify_token).
+    apify_token: str = os.getenv("APIFY_TOKEN") or ""
+    apify_token_from_env: bool = bool(os.getenv("APIFY_TOKEN"))
+    apify_token_from_app: bool = False
     cors_origins: list[str] = [
         o.strip() for o in (os.getenv("CORS_ORIGINS") or "http://localhost:5173,http://127.0.0.1:5173").split(",") if o.strip()
     ]

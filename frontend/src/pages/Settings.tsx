@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Badge, Button, Card, Checkbox, ErrorNote, Field, Input, Notice, PageHeader, Select, Spinner, Table, Td } from "../components/ui";
+import { ApifyToken } from "../components/ApifyToken";
 import { useAuth } from "../hooks/useAuth";
 import { useAction, useLoad } from "../hooks/useLoad";
 import { api } from "../services/api";
@@ -62,7 +63,7 @@ export function Settings() {
 
   const save = async () => {
     setSaved("");
-    const { apify_token_configured: _a, apify_pricing: _p, fx, ...rest } = s;
+    const { apify_token_configured: _a, apify_token_source: _b, apify_pricing: _p, fx, ...rest } = s;
     const out = await action.run(() => api.put<S>("/api/settings", { ...rest, fx: { usd_inr: Number(fx.usd_inr) } }));
     if (out) { setS(out); setSaved("Settings saved. New searches and re-analysis use them."); }
   };
@@ -94,12 +95,15 @@ export function Settings() {
           </div>
           <div className="mt-4 space-y-2">
             <Checkbox label="Also collect public phone numbers" disabled={!isAdmin} checked={s.collect_phone} onChange={(v) => setS({ ...s, collect_phone: v })} />
-            <p className="text-xs text-slate-500">
-              Apify token: {s.apify_token_configured ? "configured on the server" : "not configured"}. Tokens are set in the server's environment file and never shown here.
-            </p>
             {s.provider_mode === "live" && <Notice tone="warn">Live mode allows DuckDuckGo search and Apify collection. Each search still needs confirmation, and spend beyond the free allowance is blocked by the budget.</Notice>}
+            {s.provider_mode === "live" && !s.apify_token_configured && <Notice tone="error">Live mode is on but no Apify token is saved, so real searches cannot run yet. Add the token below.</Notice>}
           </div>
         </Card>
+
+        {isAdmin && (
+          <ApifyToken settings={s} onChange={(out) => setS((cur) => (cur
+            ? { ...cur, apify_token_configured: out.apify_token_configured, apify_token_source: out.apify_token_source } : cur))} />
+        )}
 
         <Card title="Default filters">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

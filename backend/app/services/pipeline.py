@@ -13,7 +13,7 @@ from ..integrations.base import FreeAllowanceExhausted, Handle, ProviderAuthErro
 from ..models import Activity, Creator, CreatorContact, CreatorSnapshot, SearchResult, SearchRun, utcnow
 from . import analysis, costs
 from .normalize import median_views, normalize_profile, reel_view_counts
-from .settings_store import get_settings, set_setting
+from .settings_store import ensure_apify_token, get_settings, set_setting
 
 log = logging.getLogger("creator_finder.pipeline")
 AUTO_STATUSES = {"New", "Needs Review", "Qualified", "Not Qualified"}
@@ -142,6 +142,7 @@ def passes_cheap_checks(c: Creator, filters: dict) -> bool:
 
 def run_search(db: Session, user, req: dict) -> dict:
     """Run one search. Returns either {"needs_confirmation": ...} or the finished run."""
+    ensure_apify_token(db)
     settings = get_settings(db)
     filters = {**settings["filters"], **{k: v for k, v in (req.get("filters") or {}).items() if v is not None}}
     limit = max(1, min(int(req.get("max_profiles") or settings["max_profiles_per_search"]),

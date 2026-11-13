@@ -271,6 +271,7 @@ export interface Settings {
   reels_per_creator: number;
   sender_name: string;
   apify_token_configured: boolean;
+  apify_token_source?: string | null;
 }
 
 export interface Dashboard {
