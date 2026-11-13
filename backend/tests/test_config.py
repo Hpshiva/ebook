@@ -27,3 +27,11 @@ def test_hosted_postgres_urls_use_the_installed_driver(monkeypatch):
         assert config_module._database_url() == "postgresql+psycopg://u:p@host:5432/db?sslmode=require"
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@host/db")
     assert config_module._database_url() == "postgresql+psycopg://u:p@host/db"
+
+
+def test_postgres_url_is_used_when_database_url_is_missing(monkeypatch):
+    from app.core import config as config_module
+
+    monkeypatch.setenv("DATABASE_URL", "")
+    monkeypatch.setenv("POSTGRES_URL", "postgres://u:p@host/db")
+    assert config_module._database_url() == "postgresql+psycopg://u:p@host/db"

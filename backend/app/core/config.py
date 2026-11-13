@@ -30,7 +30,9 @@ def _secret_key() -> str:
 def _database_url() -> str:
     """Default to local SQLite. Hosts hand out postgres:// or postgresql:// URLs;
     point both at the psycopg 3 driver this app installs."""
-    url = os.getenv("DATABASE_URL") or f"sqlite:///{BACKEND_DIR / 'data' / 'creator_finder.db'}"
+    # POSTGRES_URL is the name some hosts' database add-ons (for example on Vercel) set.
+    url = (os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
+           or f"sqlite:///{BACKEND_DIR / 'data' / 'creator_finder.db'}")
     for prefix in ("postgres://", "postgresql://"):
         if url.startswith(prefix):
             return "postgresql+psycopg://" + url[len(prefix):]
