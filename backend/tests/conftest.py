@@ -65,8 +65,36 @@ def login_as(email: str) -> TestClient:
     return c
 
 
-def demo_search(client, niche="fitness", **extra):
-    res = client.post("/api/discovery/run", json={"discovery_source": "demo", "profile_provider": "demo",
-                                                  "niche": niche, **extra})
+@pytest.fixture(autouse=True)
+def fake_apify(request, monkeypatch):
+    """Every test runs "live" against fake Apify providers: a token is set, the free
+    allowance is large and prices are unknown, so no cost estimate is produced.
+    Tests that check cost gating override these. Provider tests use the real client."""
+    if request.module.__name__.endswith("test_providers"):
+        return None
+    from app import integrations
+    from app.core import config as config_module
+    from app.services import pipeline
+
+    from .fakes import FakeHashtagDiscovery, FakeProfiles, FakeReels
+
+    fakes = {"discovery": FakeHashtagDiscovery(), "profiles": FakeProfiles(), "reels": FakeReels()}
+    monkeypatch.setattr(config_module.config, "apify_token", "test-token")
+    monkeypatch.setattr(config_module.config, "apify_token_from_env", True)
+    limits = {"limit_usd": 1000.0, "used_usd": 0.0, "remaining_usd": 1000.0}
+    monkeypatch.setattr(pipeline.ApifyClient, "limits", lambda self: limits)
+    monkeypatch.setattr(pipeline.ApifyClient, "prices", lambda self: {})
+    real_discovery = integrations.get_discovery
+    monkeypatch.setattr(integrations, "get_discovery",
+                        lambda name: fakes["discovery"] if name == "hashtag" else real_discovery(name))
+    monkeypatch.setattr(integrations, "get_profile_provider", lambda name: fakes["profiles"] if name == "apify" else None)
+    monkeypatch.setattr(integrations, "get_reel_provider", lambda name: fakes["reels"] if name == "apify" else None)
+    return fakes
+
+
+def fake_search(client, niche="fitness", **extra):
+    """A confirmed hashtag search against the fake providers."""
+    res = client.post("/api/discovery/run", json={"discovery_source": "hashtag", "profile_provider": "apify",
+                                                  "niche": niche, "confirmed": True, **extra})
     assert res.status_code == 200, res.text
     return res.json()["run"]

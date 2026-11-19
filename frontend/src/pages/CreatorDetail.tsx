@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AddToCampaignModal } from "../components/shared";
-import { Avatar, Badge, Button, Card, DemoBadge, ErrorNote, Field, Input, Notice, PageHeader, ScorePill, Select, SellingBadge, Spinner, Textarea, VerdictBadge } from "../components/ui";
+import { Avatar, Badge, Button, Card, ErrorNote, Field, Input, Notice, PageHeader, ScorePill, Select, SellingBadge, Spinner, Textarea, VerdictBadge } from "../components/ui";
 import { useAction, useLoad } from "../hooks/useLoad";
 import { api } from "../services/api";
 import type { Creator, CreatorDetail as Detail, Meta, OutreachMessage } from "../types";
@@ -42,7 +42,7 @@ export function CreatorDetail() {
   return (
     <>
       <PageHeader title={`@${c.username}`}
-        subtitle={<span className="flex flex-wrap items-center gap-2">{c.full_name || "Name not available"} {c.is_demo && <DemoBadge />}
+        subtitle={<span className="flex flex-wrap items-center gap-2">{c.full_name || "Name not available"}
           <a href={c.profile_url} target="_blank" rel="noreferrer noopener" className="text-indigo-700 hover:underline">Open on Instagram ↗</a></span>}
         action={<>
           <Button small variant="secondary" onClick={() => setAdding(true)}>Add to campaign</Button>
@@ -52,7 +52,6 @@ export function CreatorDetail() {
       <div className="mb-4 space-y-2">
         <ErrorNote error={action.error} />
         {flash && <Notice tone="success">{flash}</Notice>}
-        {c.is_demo && <Notice>This is a fictional DEMO DATA record. It is not a real Instagram account.</Notice>}
         {!c.collected && <Notice tone="warn">Profile data has not been collected for this creator, so most fields are empty. Nothing has been estimated or invented.</Notice>}
       </div>
 

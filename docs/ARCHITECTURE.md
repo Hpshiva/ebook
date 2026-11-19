@@ -8,8 +8,8 @@ Browser (React + Vite + TypeScript + Tailwind)
         ▼
 FastAPI backend ── SQLAlchemy ── SQLite (dev) / PostgreSQL (production)
         │
-        ├── Discovery providers:  demo · manual import · Apify hashtag search · DuckDuckGo
-        └── Profile providers:    demo · Apify (instagram-profile-scraper)
+        ├── Discovery providers:  Apify hashtag search · manual import · DuckDuckGo
+        └── Profile providers:    Apify (instagram-profile-scraper, then instagram-reel-scraper)
 ```
 
 In production one process can serve both: FastAPI serves the built React files from `frontend/dist`.
@@ -23,7 +23,7 @@ creator-finder/
 │   │   ├── main.py            app factory, routers, static frontend
 │   │   ├── core/              config (env), database, security (login, roles)
 │   │   ├── models/            all database tables
-│   │   ├── integrations/      provider interface + demo, Apify, DuckDuckGo, manual
+│   │   ├── integrations/      provider interface + Apify, DuckDuckGo, manual
 │   │   ├── services/          normalize, analysis, pipeline, costs, exports, similar, settings
 │   │   └── api/               auth, creators, discovery, campaigns, outreach, reports
 │   └── tests/                 pytest (87 tests)
@@ -37,7 +37,7 @@ creator-finder/
 
 ## Search pipeline (`services/pipeline.py`)
 
-1. **Gate.** External sources need live mode and an explicit `confirmed: true`. Without it the API returns an estimate and makes no external call.
+1. **Gate.** Every external call needs an Apify token and an explicit `confirmed: true`. Without it the API returns an estimate and makes no external call.
 2. **Discover** handles from the chosen source. Duplicates are removed; each handle keeps its source.
 3. **Pre-filter.** For search-engine results, accounts whose snippet shows followers far outside the range are skipped before any paid collection.
 4. **Cache check.** Profiles collected within `cache_days` (default 14) are reused unless Refresh is ticked.

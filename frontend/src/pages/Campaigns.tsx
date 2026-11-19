@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ExportButtons } from "../components/shared";
-import { Badge, Button, Card, DemoBadge, Empty, ErrorNote, Field, Input, Modal, Notice, PageHeader, ScorePill, Select, SellingBadge, SkeletonRows, Spinner, Stat, Table, Td } from "../components/ui";
+import { Badge, Button, Card, Empty, ErrorNote, Field, Input, Modal, Notice, PageHeader, ScorePill, Select, SellingBadge, SkeletonRows, Spinner, Stat, Table, Td } from "../components/ui";
 import { useAuth } from "../hooks/useAuth";
 import { useAction, useLoad } from "../hooks/useLoad";
 import { api } from "../services/api";
@@ -127,7 +127,7 @@ export function CampaignDetail() {
                     {isClient
                       ? <a href={l.creator.profile_url} target="_blank" rel="noreferrer noopener" className="font-medium text-slate-900 hover:text-indigo-700">@{l.creator.username}</a>
                       : <Link to={`/creators/${l.creator.id}`} className="font-medium text-slate-900 hover:text-indigo-700">@{l.creator.username}</Link>}
-                    <div className="flex items-center gap-1 text-xs text-slate-500">{l.creator.full_name} {l.creator.is_demo && <DemoBadge />}</div>
+                    <div className="flex items-center gap-1 text-xs text-slate-500">{l.creator.full_name}</div>
                   </Td>
                   <Td className="tabular-nums">{compact(l.creator.followers)}</Td>
                   <Td className="tabular-nums">{compact(l.creator.median_reel_views)}</Td>

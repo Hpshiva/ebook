@@ -115,7 +115,6 @@ export function Badge({ tone = "slate", children, title }: { tone?: Tone; childr
   return <span title={title} className={cx("inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium", TONES[tone])}>{children}</span>;
 }
 
-export const DemoBadge = () => <Badge tone="violet" title="Fictional sample record, not a real Instagram account">DEMO DATA</Badge>;
 
 const SELLING_TONE: Record<SellingStatus, Tone> = { SELLING: "red", CHECK: "amber", NOT_SELLING: "green", UNKNOWN: "slate" };
 export const SellingBadge = ({ status }: { status: SellingStatus }) => <Badge tone={SELLING_TONE[status]}>{label(status)}</Badge>;
@@ -207,7 +206,7 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
 }
 
 export function Avatar({ name, url, size = 40 }: { name: string; url?: string; size?: number }) {
-  const initials = name.replace(/^demo_/, "").replace(/[^a-zA-Z]/g, " ").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "?";
+  const initials = name.replace(/[^a-zA-Z]/g, " ").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "?";
   const style = { width: size, height: size };
   if (url) return <img src={url} alt="" style={style} referrerPolicy="no-referrer" className="rounded-full bg-slate-100 object-cover" />;
   return <span style={style} className="inline-flex shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600">{initials}</span>;

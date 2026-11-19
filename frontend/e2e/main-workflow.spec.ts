@@ -30,21 +30,22 @@ test("main workflow: campaign → discovery → approval → campaign → outrea
   await page.getByLabel("Niche", { exact: true }).fill("fitness");
   await page.getByLabel("Min followers", { exact: true }).fill("10000");
   await page.getByRole("button", { name: "Run search" }).click();
-  await expect(page.getByText("DEMO DATA: these are fictional sample creators")).toBeVisible();
+  // Every search uses the (fake) Apify providers, so it asks for confirmation first.
+  await page.getByRole("dialog").getByRole("button", { name: "Confirm and run" }).click();
   await expect(page.getByTestId("creator-card")).toHaveCount(6);
   await expect(page.getByRole("tab", { name: "Qualified (2)" })).toBeVisible();
-  const rejected = page.getByTestId("creator-card").filter({ hasText: "@demo_fitness_oliver" });
+  const rejected = page.getByTestId("creator-card").filter({ hasText: "@fake_fitness_oliver" });
   await expect(rejected.getByText("Selling", { exact: true })).toBeVisible();
   await expect(rejected.getByText("Rejected")).toBeVisible();
 
   // 7. Approve a lead that needs review.
-  const lead = page.getByTestId("creator-card").filter({ hasText: "@demo_fitness_priya" });
+  const lead = page.getByTestId("creator-card").filter({ hasText: "@fake_fitness_priya" });
   await expect(lead.getByText("Needs review")).toBeVisible();
   await lead.getByRole("button", { name: "Approve" }).click();
-  await expect(page.getByText("@demo_fitness_priya marked Qualified.")).toBeVisible();
+  await expect(page.getByText("@fake_fitness_priya marked Qualified.")).toBeVisible();
 
   // 8. Add a qualified creator to the campaign.
-  const star = page.getByTestId("creator-card").filter({ hasText: "@demo_fitness_aarav" });
+  const star = page.getByTestId("creator-card").filter({ hasText: "@fake_fitness_aarav" });
   await star.getByRole("button", { name: "Add to campaign" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Campaign").selectOption({ label: "Fitness guide launch (FitLife Guides)" });
@@ -53,9 +54,9 @@ test("main workflow: campaign → discovery → approval → campaign → outrea
   await expect(page.getByText("1 added.")).toBeVisible();
 
   // 9. Generate an outreach draft from the creator's page.
-  await star.getByRole("link", { name: "@demo_fitness_aarav" }).click();
-  await expect(page.getByRole("heading", { name: "@demo_fitness_aarav" })).toBeVisible();
-  await expect(page.getByText("This is a fictional DEMO DATA record.")).toBeVisible();
+  await star.getByRole("link", { name: "@fake_fitness_aarav" }).click();
+  await expect(page.getByRole("heading", { name: "@fake_fitness_aarav" })).toBeVisible();
+  await expect(page.getByText(/DEMO DATA/)).toHaveCount(0);
   await expect(page.getByText("Follower fit")).toBeVisible();
   await page.getByRole("button", { name: "Create outreach draft" }).click();
   await page.getByRole("link", { name: "Review it in Outreach" }).click();
@@ -68,7 +69,7 @@ test("main workflow: campaign → discovery → approval → campaign → outrea
   // The campaign now holds the shortlisted creator.
   await page.getByRole("link", { name: "Campaigns" }).click();
   await page.getByRole("link", { name: "Fitness guide launch" }).click();
-  await expect(page.getByRole("link", { name: "@demo_fitness_aarav" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "@fake_fitness_aarav" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Shortlisted ✓" })).toBeVisible();
 
   // 10. Export results (CSV from the campaign, Excel from Reports).
@@ -77,8 +78,8 @@ test("main workflow: campaign → discovery → approval → campaign → outrea
   const csvFile = await csv;
   expect(csvFile.suggestedFilename()).toBe("creator-finder-campaign.csv");
   const text = (await (await csvFile.createReadStream()).toArray()).join("");
-  expect(text).toContain("DEMO DATA");
-  expect(text).toContain("demo_fitness_aarav");
+  expect(text).not.toContain("DEMO DATA");
+  expect(text).toContain("fake_fitness_aarav");
   expect(text).toContain("Fitness guide launch");
 
   await page.getByRole("link", { name: "Reports" }).click();
@@ -88,9 +89,10 @@ test("main workflow: campaign → discovery → approval → campaign → outrea
 
   // Dashboard and cost page reflect the real records, at zero cost.
   await page.getByRole("link", { name: "Overview" }).click();
-  await expect(page.getByText("6 are demo data")).toBeVisible();
+  await expect(page.getByText("Creators discovered")).toBeVisible();
+  await expect(page.getByText(/demo/i)).toHaveCount(0);
   await page.getByRole("link", { name: "Cost & Usage" }).click();
-  await expect(page.getByText("the running cost is ₹0")).toBeVisible();
+  await expect(page.getByText("Every search that uses Apify shows an estimate and asks for confirmation first.")).toBeVisible();
 });
 
 test("signed-out visitors cannot read data", async ({ request }) => {

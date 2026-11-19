@@ -2,7 +2,7 @@
 
 Find Instagram micro-creators, check them against your filters, and manage partnerships and client lead lists in one place.
 
-It runs for **₹0** out of the box: demo mode uses fictional sample creators (always labelled **DEMO DATA**) and makes no external calls.
+It works only with real data: creators are found and checked through Apify. Apify's free monthly credit covers small-scale use, and the app never spends beyond it unless you set a budget.
 
 ## Run it
 
@@ -32,8 +32,8 @@ Open http://localhost:5173.
 
 | Area | Status |
 |---|---|
-| Dashboard with date, campaign and demo filters | Works |
-| Discovery: demo data, manual username/URL import | Works |
+| Dashboard with date and campaign filters | Works |
+| Discovery: manual username/URL import | Works |
 | Profile collection: Apify `instagram-profile-scraper` | Works on real data (live-tested 12 Nov 2026) |
 | Discovery: Instagram hashtag search via Apify `instagram-hashtag-scraper` | Works on real data (live-tested 12 Nov 2026) |
 | Reel views: Apify `instagram-reel-scraper`, second stage | Works on real data (live-tested 12 Nov 2026) |
@@ -50,15 +50,14 @@ Open http://localhost:5173.
 
 Not included: official Meta/Instagram API access, automatic email sending, paid email verification, AI classification. The provider layer is built so these can be added later.
 
-## Going live (optional, still free to start)
+## Connect Apify (required)
 
-1. Create a free Apify account and copy your API token.
-2. Copy `.env.example` to `.env` and set `APIFY_TOKEN`.
-3. Restart, then in **Settings** switch **Provider mode** to **Live**.
+1. Create a free Apify account and copy your API token (Apify → Settings → API & Integrations).
+2. Sign in to the app as an admin and paste it in **Settings → Apify token**. Or set `APIFY_TOKEN` in `.env` / the server environment.
 
 A live search has three paid steps: hashtag search to find creators, then profiles, then reel views. Reel views cost extra, so they are collected only for creators who already pass the follower, email and selling checks.
 
-Every live search shows an estimate and asks for confirmation. With a monthly budget of ₹0 the app refuses anything beyond Apify's free allowance and falls back to demo mode instead of asking for payment.
+Every live search shows an estimate and asks for confirmation. With a monthly budget of ₹0 the app refuses anything beyond Apify's free allowance; if the allowance runs out it stops and says so, without asking for payment.
 
 ## Tests
 
@@ -74,7 +73,7 @@ cd frontend && npm test
 cd frontend && npx playwright install chromium && npm run e2e
 ```
 
-Tests never call a real external service. See [docs/TEST_REPORT.md](docs/TEST_REPORT.md).
+Tests never call a real external service: they use fake Apify providers in `backend/tests/fakes.py`. See [docs/TEST_REPORT.md](docs/TEST_REPORT.md).
 
 ## More
 

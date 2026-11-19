@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Creator } from "../types";
 import { compact, day } from "../utils/format";
-import { Avatar, Badge, Button, DemoBadge, ScorePill, SellingBadge, VerdictBadge } from "./ui";
+import { Avatar, Badge, Button, ScorePill, SellingBadge, VerdictBadge } from "./ui";
 
 interface Props {
   creator: Creator;
@@ -24,7 +24,6 @@ export function CreatorCard({ creator: c, selected, onSelect, onAddToCampaign, o
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <Link to={`/creators/${c.id}`} className="truncate text-sm font-semibold text-slate-900 hover:text-indigo-700">@{c.username}</Link>
-            {c.is_demo && <DemoBadge />}
           </div>
           <p className="truncate text-sm text-slate-500">{c.full_name || "Name not available"}</p>
         </div>

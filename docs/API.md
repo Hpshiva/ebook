@@ -24,7 +24,7 @@ Access: **T** = team (admin or staff), **A** = admin only, **C** = client users 
 | GET | `/discovery/runs` | T | Search history |
 | GET | `/discovery/runs/{id}` | T | One search with results |
 
-`POST /discovery/run` body: `discovery_source` (`demo`, `manual`, `duckduckgo`), `profile_provider` (`demo`, `apify`, `none`), `niche`, `sub_niche`, `country`, `language`, `usernames`, `campaign_id`, `max_profiles`, `filters{...}`, `refresh`, `confirmed`.
+`POST /discovery/run` body: `discovery_source` (`hashtag`, `manual`, `duckduckgo`), `profile_provider` (`apify`, `none`), `niche`, `sub_niche`, `country`, `language`, `usernames`, `campaign_id`, `max_profiles`, `filters{...}`, `refresh`, `confirmed`.
 
 If the search would call an external service and `confirmed` is false, the response is `{needs_confirmation: true, allowed, external_calls, max_profiles, estimate, limits, budget, reasons}` and nothing external is called.
 
@@ -44,7 +44,7 @@ If the search would call an external service and `confirmed` is false, the respo
 | DELETE | `/creators/{id}` | T | Delete the creator and all related data |
 | GET | `/creators/{id}/similar` | T | Similar creators with reasons |
 
-List filters: `search`, `niche`, `country`, `language`, `selling_status`, `crm_status`, `verdict`, `has_email`, `min_followers`, `max_followers`, `min_score`, `tag`, `owner_id`, `include_demo`, `sort`, `order`, `page`, `page_size`.
+List filters: `search`, `niche`, `country`, `language`, `selling_status`, `crm_status`, `verdict`, `has_email`, `min_followers`, `max_followers`, `min_score`, `tag`, `owner_id`, `sort`, `order`, `page`, `page_size`.
 
 ## Clients and campaigns
 
@@ -78,7 +78,7 @@ List filters: `search`, `niche`, `country`, `language`, `selling_status`, `crm_s
 
 | Method | Path | Access | Purpose |
 |---|---|---|---|
-| GET | `/dashboard` | T | Counts; `date_from`, `date_to`, `campaign_id`, `include_demo` |
+| GET | `/dashboard` | T | Counts; `date_from`, `date_to`, `campaign_id` |
 | GET | `/export` | C | `fmt` = `csv` or `xlsx`; `scope` = `qualified`, `needs_review`, `rejected`, `all`, `selected` (`ids`), `search` (`run_id`), `campaign` (`campaign_id`). Clients: `campaign` only |
 | GET | `/costs` | T | Usage, estimates vs actuals, budget; `check_provider=true` reads Apify limits |
 | GET | `/settings` | T | Current settings |

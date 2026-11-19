@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { AddToCampaignModal, ExportButtons, Pager } from "../components/shared";
-import { Avatar, Badge, Button, Checkbox, DemoBadge, Empty, ErrorNote, Input, Notice, PageHeader, ScorePill, Select, SellingBadge, SkeletonRows, Table, Td, VerdictBadge } from "../components/ui";
+import { Avatar, Badge, Button, Empty, ErrorNote, Input, Notice, PageHeader, ScorePill, Select, SellingBadge, SkeletonRows, Table, Td, VerdictBadge } from "../components/ui";
 import { useAction, useLoad } from "../hooks/useLoad";
 import { api } from "../services/api";
 import type { Creator, Meta, Paged } from "../types";
@@ -19,7 +19,7 @@ export function Creators({ review = false }: { review?: boolean }) {
   const meta = useLoad(() => api.get<Meta>("/api/meta"));
   const [f, setF] = useState({
     search: "", niche: "", country: "", selling_status: "", crm_status: "", verdict: review ? "needs_review" : "",
-    has_email: "", tag: "", sort: "lead_score", order: "desc", include_demo: true,
+    has_email: "", tag: "", sort: "lead_score", order: "desc",
   });
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -71,7 +71,6 @@ export function Creators({ review = false }: { review?: boolean }) {
         <Select aria-label="Sort by" value={f.sort} onChange={(e) => set({ sort: e.target.value })} options={SORTS} />
         <Select aria-label="Order" value={f.order} onChange={(e) => set({ order: e.target.value })}
           options={[{ value: "desc", label: "High to low" }, { value: "asc", label: "Low to high" }]} />
-        <div className="flex items-center"><Checkbox label="Include demo data" checked={f.include_demo} onChange={(v) => set({ include_demo: v })} /></div>
       </div>
 
       <div className="space-y-3">
@@ -95,7 +94,7 @@ export function Creators({ review = false }: { review?: boolean }) {
                     <div className="min-w-0">
                       <Link to={`/creators/${c.id}`} className="font-medium text-slate-900 hover:text-indigo-700">@{c.username}</Link>
                       <div className="flex flex-wrap items-center gap-1 text-xs text-slate-500">
-                        {c.niche && <span>{c.niche}</span>}{c.country && <span>· {c.country}</span>}{c.is_demo && <DemoBadge />}
+                        {c.niche && <span>{c.niche}</span>}{c.country && <span>· {c.country}</span>}
                       </div>
                     </div>
                   </div>

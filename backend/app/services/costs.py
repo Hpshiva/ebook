@@ -20,7 +20,7 @@ def usage_summary(db: Session, since: datetime | None = None, campaign_id: int |
     if campaign_id:
         q = q.filter(SearchRun.campaign_id == campaign_id)
     runs = q.all()
-    live = [r for r in runs if not r.is_demo]
+    live = runs
     actual = [r.actual_cost_usd for r in live if r.actual_cost_usd is not None]
     est = [r.est_cost_usd for r in live if r.est_cost_usd is not None]
     # Best known figure per run: the provider's actual charge, else our estimate.
@@ -29,7 +29,6 @@ def usage_summary(db: Session, since: datetime | None = None, campaign_id: int |
     qualified = sum(r.qualified for r in live)
     return {
         "searches": len(runs),
-        "demo_searches": len(runs) - len(live),
         "profiles_requested": sum(r.requested for r in runs),
         "profiles_collected": sum(r.collected for r in runs),
         "profiles_cached": sum(r.cached for r in runs),

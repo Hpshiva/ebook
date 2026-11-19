@@ -144,5 +144,4 @@ def normalize_profile(raw: Any) -> dict | None:
         "related_usernames": list(dict.fromkeys(related))[:20],
         "country": _str(raw.get("country")),
         "language": _str(raw.get("language")),
-        "is_demo": raw.get("isDemo") is True,
     }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ExportButtons } from "../components/shared";
-import { Badge, Card, Checkbox, Empty, ErrorNote, PageHeader, Select, SkeletonRows, Table, Td } from "../components/ui";
+import { Card, Empty, ErrorNote, PageHeader, Select, SkeletonRows, Table, Td } from "../components/ui";
 import { useLoad } from "../hooks/useLoad";
 import { api } from "../services/api";
 import type { Campaign, SearchRun } from "../types";
@@ -10,13 +10,10 @@ export function Reports() {
   const campaigns = useLoad(() => api.get<Campaign[]>("/api/campaigns"));
   const runs = useLoad(() => api.get<SearchRun[]>("/api/discovery/runs"));
   const [campaignId, setCampaignId] = useState("");
-  const [includeDemo, setIncludeDemo] = useState(true);
-  const common = { include_demo: includeDemo };
 
   return (
     <>
-      <PageHeader title="Reports" subtitle="Download lead sheets as Excel or CSV. Demo records are labelled DEMO DATA in every file." />
-      <div className="mb-4"><Checkbox label="Include demo data in exports" checked={includeDemo} onChange={setIncludeDemo} /></div>
+      <PageHeader title="Reports" subtitle="Download lead sheets as Excel or CSV." />
       <div className="grid gap-5 lg:grid-cols-2">
         <Card title="Lead lists">
           <ul className="divide-y divide-slate-100">
@@ -26,7 +23,7 @@ export function Reports() {
                ["all", "Complete database", "Every creator stored."]] as const).map(([scope, title, text]) => (
               <li key={scope} className="flex flex-wrap items-center justify-between gap-2 py-3">
                 <div><p className="text-sm font-medium text-slate-800">{title}</p><p className="text-xs text-slate-500">{text}</p></div>
-                <ExportButtons params={{ scope, ...common }} />
+                <ExportButtons params={{ scope }} />
               </li>
             ))}
           </ul>
@@ -36,7 +33,7 @@ export function Reports() {
           <div className="flex flex-wrap items-center gap-3">
             <Select aria-label="Campaign" className="max-w-xs" value={campaignId} onChange={(e) => setCampaignId(e.target.value)} placeholder="Choose a campaign"
               options={(campaigns.data ?? []).map((c) => ({ value: c.id, label: c.name }))} />
-            <ExportButtons params={{ scope: "campaign", campaign_id: campaignId, ...common }} disabled={!campaignId} />
+            <ExportButtons params={{ scope: "campaign", campaign_id: campaignId }} disabled={!campaignId} />
           </div>
         </Card>
       </div>
@@ -47,13 +44,13 @@ export function Reports() {
           {runs.data.map((r) => (
             <tr key={r.id}>
               <Td className="whitespace-nowrap text-xs text-slate-500">{dateTime(r.created_at)}</Td>
-              <Td>{String(r.params.niche || "—")} {r.is_demo && <Badge tone="violet">DEMO DATA</Badge>}</Td>
+              <Td>{String(r.params.niche || "—")}</Td>
               <Td className="text-xs">{r.discovery_source} / {r.profile_provider}</Td>
               <Td className="tabular-nums">{r.discovered}</Td>
               <Td className="tabular-nums">{r.qualified}</Td>
               <Td className="tabular-nums">{r.needs_review}</Td>
               <Td className="tabular-nums">{r.rejected}</Td>
-              <Td><ExportButtons params={{ scope: "search", run_id: r.id, ...common }} label="" /></Td>
+              <Td><ExportButtons params={{ scope: "search", run_id: r.id }} label="" /></Td>
             </tr>
           ))}
         </Table>

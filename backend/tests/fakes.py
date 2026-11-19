@@ -1,15 +1,14 @@
-"""DEMO DATA provider. Fully local, free, and deterministic.
+"""Test-only fake providers. Never used by the app.
 
-Every record is fictional: usernames start with "demo_", emails use the reserved
-".example" domain, and each payload carries isDemo=True so the app labels it
-"DEMO DATA" everywhere. The payload shape mimics a real profile scraper so the
-same normalization and analysis code is exercised.
+72 fictional creators (usernames start with "fake_", emails use the reserved
+".example" domain) shaped like Apify's real output, so tests exercise the same
+normalization, analysis and pipeline code without any network call or cost.
 """
 from __future__ import annotations
 
 import random
 
-from .base import DiscoveryProvider, DiscoveryResult, FetchResult, Handle, ProfileProvider
+from app.integrations.base import DiscoveryProvider, DiscoveryResult, FetchResult, Handle, ProfileProvider
 
 NICHES = {
     "fitness": ("Home workouts and strength training", "Fitness Trainer", ["workout", "gym", "strength"]),
@@ -56,7 +55,7 @@ def _build() -> dict[str, dict]:
         for p_idx, (name, country, language) in enumerate(PEOPLE):
             rng = random.Random(f"{niche}-{p_idx}")
             first = name.split()[0].lower()
-            username = f"demo_{niche.replace(' ', '').replace('-', '')}_{first}"
+            username = f"fake_{niche.replace(' ', '').replace('-', '')}_{first}"
             followers = rng.randint(14_000, 92_000)
             views = rng.randint(58_000, 185_000)
             n_reels = rng.randint(4, 8)
@@ -89,9 +88,8 @@ def _build() -> dict[str, dict]:
                 else:
                     private = True
             data[username] = {
-                "isDemo": True,
                 "username": username,
-                "fullName": f"{name} (Demo)",
+                "fullName": name,
                 "url": f"https://www.instagram.com/{username}/",
                 "biography": "" if private else bio,
                 "followersCount": followers,
@@ -108,7 +106,7 @@ def _build() -> dict[str, dict]:
                 "relatedProfiles": [],
                 "_niche": niche,
             }
-    # Related accounts: the other demo creators in the same niche.
+    # Related accounts: the other fixture creators in the same niche.
     for username, raw in data.items():
         raw["relatedProfiles"] = [
             {"username": u} for u, r in data.items() if r["_niche"] == raw["_niche"] and u != username
@@ -116,47 +114,64 @@ def _build() -> dict[str, dict]:
     return data
 
 
-DEMO_PROFILES = _build()
+FAKE_PROFILES = _build()
 
 
-class MockDiscovery(DiscoveryProvider):
-    name = "demo"
+class FakeHashtagDiscovery(DiscoveryProvider):
+    """Stands in for the Apify hashtag search: finds the fixture creators of a niche."""
+    name = "hashtag"
+    is_external = True
+    is_paid = False  # the fixtures cost nothing; paid gating is tested separately
+
+    def __init__(self):
+        self.calls: list[dict] = []
 
     def discover(self, params: dict, limit: int) -> DiscoveryResult:
+        self.calls.append(params)
         niche = (params.get("niche") or "").strip().lower()
         country = (params.get("country") or "").strip().lower()
-        language = (params.get("language") or "").strip().lower()
         out = DiscoveryResult()
-        for username, raw in DEMO_PROFILES.items():
+        for username, raw in FAKE_PROFILES.items():
             if niche and niche not in raw["_niche"] and raw["_niche"] not in niche:
                 continue
             if country and country != raw["country"].lower():
                 continue
-            if language and language != raw["language"].lower():
-                continue
-            out.handles.append(Handle(username=username, source="demo", title=raw["fullName"],
-                                      snippet=raw["biography"][:120], est_followers=raw["followersCount"]))
-        if not out.handles:
-            out.messages.append("No DEMO DATA matches. Demo niches: " + ", ".join(NICHES) + ".")
+            out.handles.append(Handle(username=username, source="hashtag", title=raw["fullName"]))
         out.handles = out.handles[:limit]
-        out.messages.insert(0, "DEMO DATA: these are fictional sample creators, not real Instagram accounts.")
+        out.messages.append(f"Fake hashtag search returned {len(out.handles)} creator(s).")
         return out
 
 
-class MockProfiles(ProfileProvider):
-    name = "demo"
+class FakeProfiles(ProfileProvider):
+    """Stands in for the Apify profile scraper. Unknown usernames fail, like a missing account."""
+    name = "apify"
+    is_external = True
+
+    def __init__(self):
+        self.calls: list[list[str]] = []
 
     def fetch(self, usernames: list[str]) -> FetchResult:
-        result = FetchResult()
+        self.calls.append(list(usernames))
+        result = FetchResult(actor_runs=1)
         for name in usernames:
-            raw = DEMO_PROFILES.get(name)
+            raw = FAKE_PROFILES.get(name)
             if raw:
                 result.profiles.append({k: v for k, v in raw.items() if not k.startswith("_")})
             else:
                 result.failed.append(name)
-        if result.failed:
-            result.messages.append(
-                f"{len(result.failed)} username(s) are not in the DEMO DATA set. Real profile data needs a "
-                "live provider; nothing was invented for them."
-            )
         return result
+
+
+class FakeReels:
+    """Stands in for the Apify reel scraper: returns the fixture creator's video posts."""
+
+    def __init__(self):
+        self.calls: list[tuple[list[str], int]] = []
+
+    def fetch(self, usernames: list[str], per_profile: int):
+        self.calls.append((list(usernames), per_profile))
+        reels = {}
+        for name in usernames:
+            posts = [p for p in FAKE_PROFILES.get(name, {}).get("latestPosts", []) if p.get("type") == "Video"]
+            reels[name] = [{**p, "ownerUsername": name} for p in posts]  # all of them, so medians stay stable
+        return reels, FetchResult(actor_runs=1)

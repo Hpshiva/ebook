@@ -27,7 +27,7 @@ def creator_out(c: Creator, detail: bool = False) -> dict:
         "has_email": bool(emails), "email": emails[0] if emails else None,
         "lead_score": c.lead_score, "confidence": c.confidence, "verdict": c.verdict,
         "verdict_reasons": c.verdict_reasons, "crm_status": c.crm_status, "tags": c.tags or [],
-        "owner_id": c.owner_id, "follow_up_date": iso(c.follow_up_date), "is_demo": c.is_demo,
+        "owner_id": c.owner_id, "follow_up_date": iso(c.follow_up_date),
         "source": c.source, "collected": c.last_collected_at is not None,
         "last_collected_at": iso(c.last_collected_at), "created_at": iso(c.created_at),
     }
@@ -76,7 +76,7 @@ def link_out(l: CampaignCreator, for_client: bool = False) -> dict:
         creator = {"id": c.id, "username": c.username, "full_name": c.full_name, "profile_url": c.profile_url,
                    "followers": c.followers, "median_reel_views": c.median_reel_views, "niche": c.niche,
                    "country": c.country, "selling_status": c.effective_selling_status, "lead_score": c.lead_score,
-                   "confidence": c.confidence, "email": emails[0] if emails else None, "is_demo": c.is_demo}
+                   "confidence": c.confidence, "email": emails[0] if emails else None}
     else:
         creator = creator_out(c)
     return {"id": l.id, "campaign_id": l.campaign_id, "shortlisted": l.shortlisted, "approval": l.approval,
@@ -86,7 +86,7 @@ def link_out(l: CampaignCreator, for_client: bool = False) -> dict:
 def run_out(r: SearchRun, with_results: bool = False) -> dict:
     out = {
         "id": r.id, "created_at": iso(r.created_at), "campaign_id": r.campaign_id, "params": r.params,
-        "discovery_source": r.discovery_source, "profile_provider": r.profile_provider, "is_demo": r.is_demo,
+        "discovery_source": r.discovery_source, "profile_provider": r.profile_provider,
         "discovered": r.discovered, "requested": r.requested, "collected": r.collected, "cached": r.cached,
         "failed": r.failed, "qualified": r.qualified, "needs_review": r.needs_review, "rejected": r.rejected,
         "actor_runs": r.actor_runs, "est_cost_usd": r.est_cost_usd, "actual_cost_usd": r.actual_cost_usd,
@@ -99,7 +99,7 @@ def run_out(r: SearchRun, with_results: bool = False) -> dict:
 
 
 def message_out(m: OutreachMessage) -> dict:
-    return {"id": m.id, "creator_id": m.creator_id, "username": m.creator.username, "is_demo": m.creator.is_demo,
+    return {"id": m.id, "creator_id": m.creator_id, "username": m.creator.username,
             "campaign_id": m.campaign_id, "subject": m.subject, "body": m.body, "channel": m.channel,
             "status": m.status, "contacted_at": iso(m.contacted_at), "follow_up_date": iso(m.follow_up_date),
             "notes": m.notes, "created_at": iso(m.created_at),
@@ -109,7 +109,7 @@ def message_out(m: OutreachMessage) -> dict:
 def partnership_out(p: Partnership) -> dict:
     commission = round(p.revenue * p.commission_pct / 100 + p.fixed_payment, 2)
     return {
-        "id": p.id, "creator_id": p.creator_id, "username": p.creator.username, "is_demo": p.creator.is_demo,
+        "id": p.id, "creator_id": p.creator_id, "username": p.creator.username,
         "product_id": p.product_id, "product_name": p.product.name, "start_date": iso(p.start_date),
         "commission_pct": p.commission_pct, "fixed_payment": p.fixed_payment, "tracking_url": p.tracking_url,
         "promo_code": p.promo_code, "clicks": p.clicks, "conversions": p.conversions, "revenue": p.revenue,

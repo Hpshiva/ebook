@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Badge, Button, DemoBadge, Empty, ErrorNote, Field, Input, Modal, Notice, PageHeader, Select, SkeletonRows, Stat, Table, Td } from "../components/ui";
+import { Badge, Button, Empty, ErrorNote, Field, Input, Modal, Notice, PageHeader, Select, SkeletonRows, Stat, Table, Td } from "../components/ui";
 import { useAction, useLoad } from "../hooks/useLoad";
 import { api } from "../services/api";
 import type { Creator, Paged, Partnership } from "../types";
@@ -69,7 +69,7 @@ export function Partnerships() {
         <Table head={["Creator", "Product", "Commission", "Promo code", "Conversions", "Revenue", "Owed", "Payment", ""]}>
           {list.data.items.map((p) => (
             <tr key={p.id}>
-              <Td><span className="flex items-center gap-1.5 font-medium text-slate-900">@{p.username} {p.is_demo && <DemoBadge />}</span></Td>
+              <Td><span className="flex items-center gap-1.5 font-medium text-slate-900">@{p.username}</span></Td>
               <Td>{p.product_name}</Td>
               <Td className="tabular-nums">{p.commission_pct}%{p.fixed_payment ? ` + ${inr(p.fixed_payment)}` : ""}</Td>
               <Td>{p.promo_code || "—"}</Td>
@@ -88,7 +88,7 @@ export function Partnerships() {
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Creator">
                 <Select aria-label="Creator" required value={form.creator_id} onChange={(e) => set({ creator_id: e.target.value })} placeholder="Choose a creator"
-                  options={(creators.data?.items ?? []).map((c) => ({ value: c.id, label: `@${c.username}${c.is_demo ? " (demo)" : ""}` }))} />
+                  options={(creators.data?.items ?? []).map((c) => ({ value: c.id, label: `@${c.username}` }))} />
               </Field>
               <Field label="Product">
                 <Select aria-label="Product" required value={form.product_id} onChange={(e) => set({ product_id: e.target.value })} placeholder="Choose a product"

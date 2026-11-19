@@ -11,7 +11,7 @@ from ..models import AuditLog, Setting, utcnow
 def get_settings(db: Session) -> dict:
     merged = copy.deepcopy(DEFAULT_SETTINGS)
     for row in db.query(Setting).all():
-        if row.key.startswith("_"):  # internal rows (for example the signing key) are never exposed
+        if row.key.startswith("_") or row.key not in merged:  # internal or retired rows are never exposed
             continue
         if isinstance(merged.get(row.key), dict) and isinstance(row.value, dict):
             merged[row.key].update(row.value)

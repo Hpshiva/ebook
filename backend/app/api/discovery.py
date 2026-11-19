@@ -28,8 +28,8 @@ class Filters(BaseModel):
 
 
 class SearchIn(BaseModel):
-    discovery_source: str = Field(default="demo", pattern="^(demo|duckduckgo|manual|hashtag)$")
-    profile_provider: str = Field(default="demo", pattern="^(demo|apify|none)$")
+    discovery_source: str = Field(default="hashtag", pattern="^(hashtag|manual|duckduckgo)$")
+    profile_provider: str = Field(default="apify", pattern="^(apify|none)$")
     niche: str = Field(default="", max_length=80)
     sub_niche: str = Field(default="", max_length=80)
     country: str = Field(default="", max_length=80)
@@ -59,7 +59,7 @@ def run(body: SearchIn, db: Session = Depends(get_db), user: User = Depends(team
         raise HTTPException(400, str(exc)) from None
     if result["needs_confirmation"]:
         return result
-    if body.discovery_source != "demo" or body.profile_provider == "apify":
+    if body.discovery_source != "manual" or body.profile_provider == "apify":
         audit(db, user, "search.external", f"run {result['run_id']} via {body.discovery_source}/{body.profile_provider}")
         db.commit()
     return {"needs_confirmation": False, "run": run_out(db.get(SearchRun, result["run_id"]), with_results=True)}

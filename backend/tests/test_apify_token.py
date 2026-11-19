@@ -45,7 +45,6 @@ def test_admin_can_save_the_token_and_it_is_never_exposed(client, db, monkeypatc
     # A fresh server instance (empty memory) picks the token up from the database.
     monkeypatch.setattr(cfg, "apify_token", "")
     monkeypatch.setattr(cfg, "apify_token_from_app", False)
-    client.put("/api/settings", json={"provider_mode": "live"})
     monkeypatch.setattr(pipeline.ApifyClient, "limits", lambda self: LIMITS)
     monkeypatch.setattr(pipeline.ApifyClient, "prices", lambda self: {
         "usd_per_profile": 0.004, "usd_per_reel": 0.002, "usd_per_reel_run": 0.001, "usd_per_hashtag_result": 0.003})
@@ -56,7 +55,7 @@ def test_admin_can_save_the_token_and_it_is_never_exposed(client, db, monkeypatc
     gone = client.delete("/api/settings/apify-token").json()
     assert gone["apify_token_configured"] is False and cfg.apify_token == ""
     gate = client.post("/api/discovery/run", json=search).json()
-    assert gate["allowed"] is False and "APIFY_TOKEN is not configured" in gate["reasons"][0]
+    assert gate["allowed"] is False and "No Apify token is saved" in gate["reasons"][0]
     actions = [a["action"] for a in client.get("/api/audit").json()]
     assert "apify_token.save" in actions and "apify_token.remove" in actions
 

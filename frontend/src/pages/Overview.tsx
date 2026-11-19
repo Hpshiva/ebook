@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Card, Checkbox, Empty, ErrorNote, Field, Input, Notice, PageHeader, Select, SkeletonRows, Stat } from "../components/ui";
+import { Card, Empty, ErrorNote, Field, Input, Notice, PageHeader, Select, SkeletonRows, Stat } from "../components/ui";
 import { useLoad } from "../hooks/useLoad";
 import { api } from "../services/api";
 import type { Campaign, Dashboard } from "../types";
@@ -10,11 +10,10 @@ export function Overview() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [campaignId, setCampaignId] = useState("");
-  const [includeDemo, setIncludeDemo] = useState(true);
   const campaigns = useLoad(() => api.get<Campaign[]>("/api/campaigns"));
   const { data: d, loading, error } = useLoad(
-    () => api.get<Dashboard>("/api/dashboard", { date_from: from, date_to: to, campaign_id: campaignId, include_demo: includeDemo }),
-    [from, to, campaignId, includeDemo],
+    () => api.get<Dashboard>("/api/dashboard", { date_from: from, date_to: to, campaign_id: campaignId }),
+    [from, to, campaignId],
   );
   const maxStatus = d ? Math.max(1, ...Object.values(d.crm_statuses)) : 1;
 
@@ -28,20 +27,19 @@ export function Overview() {
           <Select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} placeholder="All campaigns"
             options={(campaigns.data ?? []).map((c) => ({ value: c.id, label: c.name }))} />
         </Field>
-        <div className="flex items-end pb-2"><Checkbox label="Include demo data" checked={includeDemo} onChange={setIncludeDemo} /></div>
       </div>
       <ErrorNote error={error} />
       {loading && !d ? <SkeletonRows rows={6} /> : d && (
         <div className="space-y-5">
-          {d.provider_mode === "mock" && (
-            <Notice>Demo mode is on: searches use fictional DEMO DATA and cost nothing. Live providers can be enabled in Settings.</Notice>
+          {!d.apify_token_configured && (
+            <Notice tone="warn">No Apify token is saved, so searches cannot collect real data yet. Add it in Settings → Apify token.</Notice>
           )}
           {d.creators_total === 0 && (
             <Empty title="No creators yet" text="Run your first search to fill the dashboard."
               action={<Link to="/discover" className="rounded-md bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-indigo-700">Discover creators</Link>} />
           )}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            <Stat label="Creators discovered" value={num(d.creators_total)} hint={d.demo_creators ? `${num(d.demo_creators)} are demo data` : undefined} />
+            <Stat label="Creators discovered" value={num(d.creators_total)} />
             <Stat label="Qualified" value={num(d.qualified)} tone="green" />
             <Stat label="Needs review" value={num(d.needs_review)} tone="amber" />
             <Stat label="Rejected" value={num(d.rejected)} tone="red" />

@@ -77,12 +77,8 @@ export function Settings() {
         action={isAdmin && <Button disabled={action.busy} onClick={save}>{action.busy ? "Saving…" : "Save settings"}</Button>} />
       <div className="mb-4 space-y-2"><ErrorNote error={action.error} />{saved && <Notice tone="success">{saved}</Notice>}</div>
       <div className="space-y-5">
-        <Card title="Provider mode and cost protection">
+        <Card title="Cost protection">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="Provider mode" hint="Demo makes no external calls and costs nothing.">
-              <Select aria-label="Provider mode" disabled={!isAdmin} value={s.provider_mode} onChange={(e) => setS({ ...s, provider_mode: e.target.value as S["provider_mode"] })}
-                options={[{ value: "mock", label: "Demo (free, no external calls)" }, { value: "live", label: "Live (external providers allowed)" }]} />
-            </Field>
             {numField("Monthly cash budget (₹)", s.monthly_budget_inr, (v) => setS({ ...s, monthly_budget_inr: v }), "₹0 means never spend beyond free allowances.")}
             {numField("Warn at % of budget", s.budget_warn_pct, (v) => setS({ ...s, budget_warn_pct: v }))}
             {numField("Max profiles per search", s.max_profiles_per_search, (v) => setS({ ...s, max_profiles_per_search: v }))}
@@ -95,8 +91,7 @@ export function Settings() {
           </div>
           <div className="mt-4 space-y-2">
             <Checkbox label="Also collect public phone numbers" disabled={!isAdmin} checked={s.collect_phone} onChange={(v) => setS({ ...s, collect_phone: v })} />
-            {s.provider_mode === "live" && <Notice tone="warn">Live mode allows DuckDuckGo search and Apify collection. Each search still needs confirmation, and spend beyond the free allowance is blocked by the budget.</Notice>}
-            {s.provider_mode === "live" && !s.apify_token_configured && <Notice tone="error">Live mode is on but no Apify token is saved, so real searches cannot run yet. Add the token below.</Notice>}
+            {!s.apify_token_configured && <Notice tone="error">No Apify token is saved, so searches cannot collect real data yet. Add it below.</Notice>}
           </div>
         </Card>
 

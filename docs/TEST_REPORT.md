@@ -24,17 +24,17 @@ No test calls a real external service. A guard fails any backend test that attem
 - Selling detection: storefront links, strong phrases, link pages, single promo caption, `UNKNOWN` when no data, "not a guarantee" wording
 - Contact extraction, de-duplication, phone only when enabled, no guessed emails, syntax validation, MX check outcomes
 - Lead score: full breakdown, missing data excluded, unknown selling earns nothing, configurable weights, niche relevance
-- Search pipeline end to end on demo data; duplicate prevention; cache hit, expiry and forced refresh; per-search filters; per-search profile limit
-- Cost protection: blocked in demo mode, confirmation required, estimate from provider pricing, actual cost recorded separately, cache avoids repeat spend, insufficient allowance, exhausted allowance falls back to demo mode, ₹0 budget block, budget levels and cost maths
+- Search pipeline end to end on fake Apify providers; duplicate prevention; cache hit, expiry and forced refresh; per-search filters; per-search profile limit
+- Cost protection: blocked without a token, confirmation required, estimate from provider pricing, actual cost recorded separately, cache avoids repeat spend, insufficient allowance, exhausted allowance stops without payment, ₹0 budget block, budget levels and cost maths
 - Apify client: polling, retry with backoff, give-up, auth and 402 handling, failed run, invalid JSON, timeout, pricing parsing, batching with partial failure, token never in the URL
 - DuckDuckGo: HTML parsing, pagination, de-duplication, source attribution, rate-limit message
-- Demo data is clearly fictional; demo provider invents nothing for real usernames
+- Test fixtures are clearly fictional; an unknown username fails instead of being invented
 - Login, single setup, lockout, weak password; every endpoint requires sign-in
 - Authorization and client isolation: a client sees only its own shortlisted leads, cannot reach internal endpoints (19 checked), cannot see another client's campaign, never receives internal notes
 - CRM status, notes, tags, owner, follow-up, activity history; selling override with reviewer and time
 - Outreach drafts and templates; partnership commission maths
-- CSV and XLSX exports: all columns, DEMO DATA label, formula-injection protection, all scopes
-- Dashboard counts from real records with date, campaign and demo filters; settings validation
+- CSV and XLSX exports: all columns, formula-injection protection, all scopes
+- Dashboard counts from real records with date and campaign filters; settings validation
 
 **Frontend**
 
@@ -73,10 +73,14 @@ Found by the live test and fixed:
 - A link to a publisher's `/books/` page was not flagged. Product-looking links on any site now give "Check".
 - Whole numbers appeared as `1647189.0` in CSV when some rows were empty.
 
+## Demo mode removed (19 November 2026)
+
+The app now works with real data only. Demo data, the demo provider and the Demo/Live switch were removed; old demo records are deleted when the server starts. The tests now run against fake Apify providers that never touch the network.
+
 ## Bugs found and fixed
 
 1. New creators stayed in CRM status "New" instead of following their verdict (found in the live browser check; fixed and now covered by a test).
-2. The pre-collection follower skip (meant for search-engine snippets) was also hiding demo creators; it now applies only to external discovery.
+2. The pre-collection follower skip (meant for search-engine snippets) was also hiding sample creators; it now applies only to external discovery.
 3. Two wrong expectations in my own tests were corrected.
 
 ## Not tested, and remaining risks

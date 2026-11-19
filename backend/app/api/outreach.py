@@ -38,7 +38,7 @@ class _Safe(dict):
 
 
 def render(text: str, creator: Creator, sender: str, product: str = "") -> str:
-    name = (creator.full_name or creator.username).replace("(Demo)", "").strip().split(" ")[0] or creator.username
+    name = (creator.full_name or creator.username).strip().split(" ")[0] or creator.username
     values = _Safe(first_name=name, username=creator.username, niche=creator.niche or "your niche",
                    followers=f"{creator.followers:,}" if creator.followers else "", sender=sender or "[your name]",
                    product=product or "our digital product")

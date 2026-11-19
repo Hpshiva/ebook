@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from ..core.db import get_db
 from ..core.security import team_user
-from ..integrations.mock_provider import NICHES
 from ..models import CRM_STATUSES, SELLING_STATUSES, Activity, Creator, CreatorContact, User, utcnow
 from ..services import analysis
 from ..services.pipeline import analyze_creator
@@ -57,7 +56,7 @@ def log(creator: Creator, user: User, action: str, detail: str):
 
 def filtered_query(db: Session, search="", niche="", country="", selling_status="", crm_status="", verdict="",
                    has_email: bool | None = None, min_followers: int | None = None, max_followers: int | None = None,
-                   min_score: float | None = None, tag="", include_demo=True, owner_id: int | None = None,
+                   min_score: float | None = None, tag="", owner_id: int | None = None,
                    language=""):
     q = db.query(Creator)
     if search:
@@ -85,8 +84,6 @@ def filtered_query(db: Session, search="", niche="", country="", selling_status=
         q = q.filter(Creator.followers <= max_followers)
     if min_score is not None:
         q = q.filter(Creator.lead_score >= min_score)
-    if not include_demo:
-        q = q.filter(Creator.is_demo.is_(False))
     rows = None
     if selling_status or tag:  # JSON-backed fields: filter in Python for SQLite/Postgres portability
         rows = [c for c in q.all()
@@ -101,8 +98,8 @@ def meta(db: Session = Depends(get_db), _: User = Depends(team_user)):
         return sorted({v for (v,) in db.query(col).distinct() if v})
     return {
         "crm_statuses": CRM_STATUSES, "selling_statuses": SELLING_STATUSES,
-        "niches": sorted(set(NICHES) | {n.lower() for n in distinct(Creator.niche)}),
-        "demo_niches": list(NICHES), "countries": distinct(Creator.country), "languages": distinct(Creator.language),
+        "niches": sorted(set(analysis.NICHE_KEYWORDS) | {n.lower() for n in distinct(Creator.niche)}),
+        "countries": distinct(Creator.country), "languages": distinct(Creator.language),
         "owners": [{"id": u.id, "name": u.name or u.email}
                    for u in db.query(User).filter(User.role != "client", User.is_active).all()],
     }
@@ -114,12 +111,12 @@ def list_creators(
     search: str = "", niche: str = "", country: str = "", language: str = "", selling_status: str = "",
     crm_status: str = "", verdict: str = "", has_email: bool | None = None,
     min_followers: int | None = None, max_followers: int | None = None, min_score: float | None = None,
-    tag: str = "", include_demo: bool = True, owner_id: int | None = None,
+    tag: str = "", owner_id: int | None = None,
     sort: str = "lead_score", order: str = "desc",
     page: int = Query(1, ge=1), page_size: int = Query(25, ge=1, le=200),
 ):
     q, rows = filtered_query(db, search, niche, country, selling_status, crm_status, verdict, has_email,
-                             min_followers, max_followers, min_score, tag, include_demo, owner_id, language)
+                             min_followers, max_followers, min_score, tag, owner_id, language)
     col = SORTS.get(sort, Creator.lead_score)
     if rows is None:
         total = q.count()

@@ -7,7 +7,7 @@ import pandas as pd
 from ..models import Creator
 
 COLUMNS = [
-    "Data type", "Username", "Full name", "Instagram URL", "Country", "Language", "Niche", "Followers",
+    "Username", "Full name", "Instagram URL", "Country", "Language", "Niche", "Followers",
     "Following", "Median Reel views", "Reels analyzed", "Engagement rate (%)", "Selling status",
     "Selling reason", "Business email", "Contact source", "Contact validation", "Lead score",
     "Score breakdown", "Confidence", "Last analyzed", "Campaign", "CRM status", "Notes",
@@ -23,7 +23,6 @@ def creator_row(c: Creator, campaign: str = "", notes: str | None = None) -> dic
     if notes is None:
         notes = " | ".join(a.detail for a in c.activities if a.action == "note")
     return {
-        "Data type": "DEMO DATA" if c.is_demo else "Collected",
         "Username": c.username,
         "Full name": c.full_name,
         "Instagram URL": c.profile_url,

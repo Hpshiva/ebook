@@ -53,7 +53,6 @@ export interface Creator {
   tags: string[];
   owner_id: number | null;
   follow_up_date: string | null;
-  is_demo: boolean;
   source: string;
   collected: boolean;
   last_collected_at: string | null;
@@ -95,7 +94,6 @@ export interface Meta {
   crm_statuses: string[];
   selling_statuses: SellingStatus[];
   niches: string[];
-  demo_niches: string[];
   countries: string[];
   languages: string[];
   owners: { id: number; name: string }[];
@@ -108,7 +106,6 @@ export interface SearchRun {
   params: Record<string, unknown>;
   discovery_source: string;
   profile_provider: string;
-  is_demo: boolean;
   discovered: number;
   requested: number;
   collected: number;
@@ -206,7 +203,6 @@ export interface OutreachMessage {
   id: number;
   creator_id: number;
   username: string;
-  is_demo: boolean;
   subject: string;
   body: string;
   status: string;
@@ -228,7 +224,6 @@ export interface Partnership {
   id: number;
   creator_id: number;
   username: string;
-  is_demo: boolean;
   product_id: number;
   product_name: string;
   start_date: string | null;
@@ -263,7 +258,6 @@ export interface Settings {
   cache_days: number;
   max_profiles_per_search: number;
   collect_phone: boolean;
-  provider_mode: "mock" | "live";
   monthly_budget_inr: number;
   budget_warn_pct: number;
   fx: { usd_inr: number; updated_at: string | null; source: string };
@@ -276,7 +270,6 @@ export interface Settings {
 
 export interface Dashboard {
   creators_total: number;
-  demo_creators: number;
   qualified: number;
   needs_review: number;
   rejected: number;
@@ -288,5 +281,5 @@ export interface Dashboard {
   outreach: Record<string, number>;
   follow_ups_due: number;
   cost: { best_known_usd: number; best_known_inr: number | null; has_actuals: boolean; live_searches: number };
-  provider_mode: string;
+  apify_token_configured: boolean;
 }

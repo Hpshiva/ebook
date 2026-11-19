@@ -66,9 +66,6 @@ DEFAULT_SETTINGS: dict = {
     "cache_days": 14,
     "max_profiles_per_search": 50,
     "collect_phone": False,
-    # "mock" keeps every call local and free. "live" allows external providers
-    # (still gated by an explicit confirmation on every search).
-    "provider_mode": "mock",
     "monthly_budget_inr": 0,
     "budget_warn_pct": 80,
     "fx": {"usd_inr": 90.0, "updated_at": None, "source": "manual default, please update"},

@@ -103,6 +103,7 @@ class Creator(Base):
     tags: Mapped[list] = mapped_column(JSON, default=list)
     follow_up_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
+    # Retired: demo data was removed. Kept only so old rows can be found and cleaned up.
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     source: Mapped[str] = mapped_column(String(40), default="")
     data_provider: Mapped[str] = mapped_column(String(40), default="")

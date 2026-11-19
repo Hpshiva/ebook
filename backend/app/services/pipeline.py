@@ -63,7 +63,6 @@ def _apply_profile(db: Session, c: Creator, p: dict, provider: str, settings: di
     c.language = p["language"] or c.language
     c.niche = niche or c.niche
     c.sub_niche = sub_niche or c.sub_niche
-    c.is_demo = p["is_demo"]
     c.data_provider = provider
     c.last_collected_at = utcnow()
     existing = {(x.type, x.value) for x in c.contacts}
@@ -82,13 +81,9 @@ def apify_gate(db: Session, settings: dict, n_to_fetch: int, n_reel_creators: in
     """Decide whether a live Apify call is allowed, without making a paid call."""
     estimate = costs.estimate_fetch(n_to_fetch, settings, n_reel_creators, n_discovery)
     info: dict = {"allowed": True, "estimate": estimate, "limits": None, "reasons": []}
-    if settings.get("provider_mode") != "live":
-        info["allowed"] = False
-        info["reasons"].append("Live providers are switched off (Settings → Provider mode). Demo mode is active.")
-        return info
     if not config.apify_token:
         info["allowed"] = False
-        info["reasons"].append("APIFY_TOKEN is not configured on the server.")
+        info["reasons"].append("No Apify token is saved. Add it in Settings → Apify token.")
         return info
     client = ApifyClient(config.apify_token, max_retries=2)
     try:
@@ -147,14 +142,12 @@ def run_search(db: Session, user, req: dict) -> dict:
     filters = {**settings["filters"], **{k: v for k, v in (req.get("filters") or {}).items() if v is not None}}
     limit = max(1, min(int(req.get("max_profiles") or settings["max_profiles_per_search"]),
                        int(settings["max_profiles_per_search"])))
-    source, provider_name = req.get("discovery_source", "demo"), req.get("profile_provider", "demo")
+    source, provider_name = req.get("discovery_source", "hashtag"), req.get("profile_provider", "apify")
     niche, sub_niche = (req.get("niche") or "").strip(), (req.get("sub_niche") or "").strip()
     messages: list[str] = []
 
     discovery = integrations.get_discovery(source)
     paid_discovery = getattr(discovery, "is_paid", False)
-    if discovery.is_external and settings.get("provider_mode") != "live":
-        raise ProviderError("Live discovery is switched off. Use Demo data or Manual import, or enable live mode in Settings.")
     if (discovery.is_external or provider_name == "apify") and not req.get("confirmed"):
         upper = limit
         if source == "manual":
@@ -181,9 +174,7 @@ def run_search(db: Session, user, req: dict) -> dict:
     try:
         found = discovery.discover(req, limit)
     except FreeAllowanceExhausted as exc:
-        set_setting(db, "provider_mode", "mock")
-        db.commit()
-        raise ProviderError(f"{exc} Live mode has been switched back to demo mode. No payment was made.") from None
+        raise ProviderError(f"{exc} No payment was made. Real searches will work again when the Apify allowance renews or a paid plan is added.") from None
     messages += found.messages
     handles: dict[str, Handle] = {}
     for h in found.handles:  # duplicate removal, keeps first source
@@ -211,7 +202,6 @@ def run_search(db: Session, user, req: dict) -> dict:
 
     run = SearchRun(user_id=user.id, campaign_id=req.get("campaign_id"), discovery_source=source,
                     profile_provider=provider_name, discovered=len(handles), cached=len(cached),
-                    is_demo=(source == "demo" and provider_name in ("demo", "none")),
                     params={k: req.get(k) for k in ("niche", "sub_niche", "country", "language", "category")} | {"filters": filters})
 
     fetched: dict[str, dict] = {}
@@ -220,7 +210,7 @@ def run_search(db: Session, user, req: dict) -> dict:
         run.est_cost_usd = gate["estimate"]["estimated_usd"]
         if not gate["allowed"]:
             messages += gate["reasons"]
-            messages.append("Collection was skipped. Profiles are saved as “not collected”; demo mode is still available.")
+            messages.append("Collection was skipped. Profiles are saved as “not collected”.")
             provider_name = "none"
             run.est_cost_usd = None
     if to_fetch and provider_name != "none":
@@ -228,9 +218,8 @@ def run_search(db: Session, user, req: dict) -> dict:
         try:
             result = provider.fetch(to_fetch)
         except FreeAllowanceExhausted as exc:
-            # Never ask for payment: fall back to demo mode and say so.
-            set_setting(db, "provider_mode", "mock")
-            messages.append(f"{exc} Live mode has been switched back to demo mode. No payment was made.")
+            # Never ask for payment: stop and say so.
+            messages.append(f"{exc} No payment was made. Real searches will work again when the Apify allowance renews or a paid plan is added.")
             result = None
         except ProviderError as exc:
             messages.append(f"Profile collection failed: {exc}")
@@ -280,8 +269,7 @@ def run_search(db: Session, user, req: dict) -> dict:
                 try:
                     reels, reel_result = integrations.get_reel_provider("apify").fetch(wanted, int(settings["reels_per_creator"]))
                 except FreeAllowanceExhausted as exc:
-                    set_setting(db, "provider_mode", "mock")
-                    messages.append(f"{exc} Live mode has been switched back to demo mode. No payment was made.")
+                    messages.append(f"{exc} No payment was made. Real searches will work again when the Apify allowance renews or a paid plan is added.")
                     reels, reel_result = {}, None
                 except ProviderError as exc:
                     messages.append(f"Reel collection failed: {exc}")

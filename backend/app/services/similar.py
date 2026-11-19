@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..models import Creator
 
-STOP = {"the", "and", "for", "with", "your", "you", "from", "that", "this", "new", "every", "about", "tips", "demo"}
+STOP = {"the", "and", "for", "with", "your", "you", "from", "that", "this", "new", "every", "about", "tips"}
 
 
 def _words(c: Creator) -> set[str]:
@@ -25,7 +25,7 @@ def _close(a: int | None, b: int | None) -> float | None:
 def find_similar(db: Session, target: Creator, limit: int = 10) -> list[dict]:
     words = _words(target)
     out = []
-    q = db.query(Creator).filter(Creator.id != target.id, Creator.is_demo == target.is_demo,
+    q = db.query(Creator).filter(Creator.id != target.id,
                                  Creator.last_collected_at.isnot(None))
     for c in q.limit(2000):
         score, reasons = 0.0, []

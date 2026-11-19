@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Badge, Button, Card, DemoBadge, Empty, ErrorNote, Field, Input, Modal, Notice, PageHeader, Select, SkeletonRows, Textarea } from "../components/ui";
+import { Badge, Button, Card, Empty, ErrorNote, Field, Input, Modal, Notice, PageHeader, Select, SkeletonRows, Textarea } from "../components/ui";
 import { useAction, useLoad } from "../hooks/useLoad";
 import { api } from "../services/api";
 import type { OutreachMessage, Template } from "../types";
@@ -58,7 +58,6 @@ export function Outreach() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       <Link to={`/creators/${m.creator_id}`} className="font-medium text-slate-900 hover:text-indigo-700">@{m.username}</Link>
-                      {m.is_demo && <DemoBadge />}
                       <Badge tone={TONE[m.status as keyof typeof TONE] ?? "slate"}>{label(m.status)}</Badge>
                       <span className="text-xs text-slate-500">{m.email ?? "no public email"}</span>
                     </div>
@@ -89,7 +88,6 @@ export function Outreach() {
       {open && (
         <Modal wide title={`Draft for @${open.username}`} onClose={() => setOpen(null)}>
           <div className="space-y-3">
-            {open.is_demo && <Notice>This creator is DEMO DATA. Do not send this message to anyone.</Notice>}
             <Field label="Subject"><Input aria-label="Subject" defaultValue={open.subject} onBlur={(e) => e.target.value !== open.subject && save(open.id, { subject: e.target.value })} /></Field>
             <Field label="Message"><Textarea aria-label="Message" rows={10} defaultValue={open.body} onBlur={(e) => e.target.value !== open.body && save(open.id, { body: e.target.value })} /></Field>
             <div className="grid gap-3 sm:grid-cols-2">

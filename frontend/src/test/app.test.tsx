@@ -40,40 +40,40 @@ vi.mock("../services/api", () => ({
 }));
 
 const creator = (over: Partial<Creator> = {}): Creator => ({
-  id: 1, username: "demo_fitness_aarav", full_name: "Aarav Mehta (Demo)", profile_url: "https://www.instagram.com/demo_fitness_aarav/",
+  id: 1, username: "fake_fitness_aarav", full_name: "Aarav Mehta", profile_url: "https://www.instagram.com/fake_fitness_aarav/",
   profile_pic_url: "", followers: 42000, median_reel_views: 91000, reels_analyzed: 5, engagement_rate: 4.2, niche: "fitness",
   country: "India", language: "Hindi", business_category: "Fitness Trainer", selling_status: "NOT_SELLING", selling_overridden: false,
-  has_email: true, email: "hello@demo.example", lead_score: 92, confidence: "High", verdict: "qualified",
+  has_email: true, email: "hello@fake.example", lead_score: 92, confidence: "High", verdict: "qualified",
   verdict_reasons: ["Meets all active filters."], crm_status: "Qualified", tags: [], owner_id: null, follow_up_date: null,
-  is_demo: true, source: "demo", collected: true, last_collected_at: "2026-11-12T08:00:00", created_at: "2026-11-12T08:00:00", ...over,
+  source: "hashtag", collected: true, last_collected_at: "2026-11-12T08:00:00", created_at: "2026-11-12T08:00:00", ...over,
 });
 
 const settings: Settings = {
   filters: { min_followers: 10000, max_followers: 100000, min_views: 50000, max_views: 200000, min_reels: 2, require_email: true, no_email_to_review: true, require_public: true, exclude_selling: true },
   scoring_weights: { follower_fit: 10, reel_views: 25, engagement: 20, niche_relevance: 20, selling_status: 15, contact: 10 },
-  cache_days: 14, max_profiles_per_search: 50, collect_phone: false, provider_mode: "mock", monthly_budget_inr: 0, budget_warn_pct: 80,
+  cache_days: 14, max_profiles_per_search: 50, collect_phone: false, monthly_budget_inr: 0, budget_warn_pct: 80,
   fx: { usd_inr: 90, updated_at: null, source: "manual default" }, apify_pricing: { usd_per_profile: null, source: null, updated_at: null },
   sender_name: "", apify_token_configured: false, reels_per_creator: 5,
 };
 
 const meta = {
   crm_statuses: ["New", "Needs Review", "Qualified", "Not Qualified", "Contacted", "Rejected"],
-  selling_statuses: ["SELLING", "CHECK", "NOT_SELLING", "UNKNOWN"], niches: ["fitness", "food"], demo_niches: ["fitness"],
+  selling_statuses: ["SELLING", "CHECK", "NOT_SELLING", "UNKNOWN"], niches: ["fitness", "food"],
   countries: ["India"], languages: ["Hindi"], owners: [{ id: 1, name: "Admin" }],
 };
 
 const dashboard = {
-  creators_total: 6, demo_creators: 6, qualified: 2, needs_review: 2, rejected: 2, with_email: 5, searches: 1, active_campaigns: 1, clients: 1,
+  creators_total: 6, qualified: 2, needs_review: 2, rejected: 2, with_email: 5, searches: 1, active_campaigns: 1, clients: 1,
   crm_statuses: { Qualified: 2, "Needs Review": 2 }, outreach: { draft: 0, contacted: 0, replied: 0, no_reply: 0 }, follow_ups_due: 0,
-  cost: { best_known_usd: 0, best_known_inr: 0, has_actuals: false, live_searches: 0 }, provider_mode: "mock",
+  cost: { best_known_usd: 0, best_known_inr: 0, has_actuals: false, live_searches: 0 }, apify_token_configured: true,
 };
 
 const run = (results: Creator[]) => ({
-  id: 7, created_at: "2026-11-12T08:00:00", campaign_id: null, params: { niche: "fitness" }, discovery_source: "demo", profile_provider: "demo",
-  is_demo: true, discovered: results.length, requested: results.length, collected: results.length, cached: 0, failed: 0,
+  id: 7, created_at: "2026-11-12T08:00:00", campaign_id: null, params: { niche: "fitness" }, discovery_source: "hashtag", profile_provider: "apify",
+  discovered: results.length, requested: results.length, collected: results.length, cached: 0, failed: 0,
   qualified: results.filter((r) => r.verdict === "qualified").length, needs_review: results.filter((r) => r.verdict === "needs_review").length,
   rejected: results.filter((r) => r.verdict === "rejected").length, actor_runs: 0, est_cost_usd: null, actual_cost_usd: null,
-  messages: ["DEMO DATA: these are fictional sample creators, not real Instagram accounts."], results,
+  messages: ["Hashtag search (#fitness) returned 3 reel(s) from 3 creator(s)."], results,
 });
 
 function signedIn(role: "admin" | "client" = "admin") {
@@ -97,11 +97,11 @@ beforeEach(() => {
 });
 
 describe("creator card", () => {
-  it("shows the key facts, the DEMO DATA label and working action buttons", async () => {
+  it("shows the key facts and working action buttons, with no demo label", async () => {
     const onAdd = vi.fn(), onApprove = vi.fn(), onReject = vi.fn();
     render(<MemoryRouter><CreatorCard creator={creator()} onAddToCampaign={onAdd} onApprove={onApprove} onReject={onReject} /></MemoryRouter>);
-    expect(screen.getByText("@demo_fitness_aarav")).toBeInTheDocument();
-    expect(screen.getByText("DEMO DATA")).toBeInTheDocument();
+    expect(screen.getByText("@fake_fitness_aarav")).toBeInTheDocument();
+    expect(screen.queryByText("DEMO DATA")).not.toBeInTheDocument();
     expect(screen.getByText("42K")).toBeInTheDocument();
     expect(screen.getByText("91K")).toBeInTheDocument();
     expect(screen.getByText("Not selling")).toBeInTheDocument();
@@ -117,7 +117,7 @@ describe("creator card", () => {
   });
 
   it("never shows missing data as zero", () => {
-    render(<MemoryRouter><CreatorCard creator={creator({ is_demo: false, collected: false, followers: null, median_reel_views: null,
+    render(<MemoryRouter><CreatorCard creator={creator({ collected: false, followers: null, median_reel_views: null,
       lead_score: null, has_email: false, verdict: "needs_review", selling_status: "UNKNOWN", last_collected_at: null })} /></MemoryRouter>);
     expect(screen.queryByText("DEMO DATA")).not.toBeInTheDocument();
     expect(screen.getByText("No score")).toBeInTheDocument();
@@ -171,10 +171,10 @@ describe("navigation", () => {
       expect(within(nav).getByRole("link", { name })).toBeInTheDocument();
     }
     expect(await screen.findByText("Creators discovered")).toBeInTheDocument();
-    expect(screen.getByText("6 are demo data")).toBeInTheDocument();
+    expect(screen.queryByText(/demo/i)).not.toBeInTheDocument();
     await userEvent.click(within(nav).getByRole("link", { name: "Creator Database" }));
     expect(await screen.findByRole("heading", { name: "Creator Database" })).toBeInTheDocument();
-    expect(await screen.findByText("@demo_fitness_aarav")).toBeInTheDocument();
+    expect(await screen.findByText("@fake_fitness_aarav")).toBeInTheDocument();
     await userEvent.click(within(nav).getByRole("link", { name: "Clients" }));
     expect(await screen.findByRole("heading", { name: "Clients" })).toBeInTheDocument();
     expect(await screen.findByText("Acme")).toBeInTheDocument();
@@ -194,8 +194,8 @@ describe("navigation", () => {
 describe("discover", () => {
   it("sends the edited filters, shows results and lets a lead be approved", async () => {
     signedIn();
-    const results = [creator(), creator({ id: 2, username: "demo_fitness_priya", verdict: "needs_review", selling_status: "CHECK", crm_status: "Needs Review" }),
-      creator({ id: 3, username: "demo_fitness_oliver", verdict: "rejected", selling_status: "SELLING" })];
+    const results = [creator(), creator({ id: 2, username: "fake_fitness_priya", verdict: "needs_review", selling_status: "CHECK", crm_status: "Needs Review" }),
+      creator({ id: 3, username: "fake_fitness_oliver", verdict: "rejected", selling_status: "SELLING" })];
     routes.set("POST /api/discovery/run", () => ({ needs_confirmation: false, run: run(results) }));
     routes.set("PATCH /api/creators/2", (body) => ({ ...results[1], ...(body as object) }));
     renderApp("/discover");
@@ -212,13 +212,13 @@ describe("discover", () => {
     expect(sent.filters.require_email).toBe(false);
     expect(sent.confirmed).toBe(false);
     expect(sent.niche).toBe("fitness");
-    expect(screen.getByText(/DEMO DATA: these are fictional/)).toBeInTheDocument();
+    expect(screen.getByText(/Hashtag search \(#fitness\) returned/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("tab", { name: "Needs review (1)" }));
     const cards = screen.getAllByTestId("creator-card");
     expect(cards).toHaveLength(1);
     await userEvent.click(within(cards[0]).getByRole("button", { name: "Approve" }));
-    expect(await screen.findByText("@demo_fitness_priya marked Qualified.")).toBeInTheDocument();
+    expect(await screen.findByText("@fake_fitness_priya marked Qualified.")).toBeInTheDocument();
     expect(calls.find((c) => c.method === "PATCH")?.body).toEqual({ crm_status: "Qualified" });
 
     await userEvent.click(screen.getAllByRole("button", { name: "Export Excel" })[0]);
@@ -229,7 +229,7 @@ describe("discover", () => {
     signedIn();
     routes.set("POST /api/discovery/run", () => ({ needs_confirmation: true, allowed: false, external_calls: ["Apify profile and reel collection"],
       max_profiles: 12, estimate: { profiles_to_fetch: 12, usd_per_profile: null, pricing_source: null, estimated_usd: null, estimated_inr: null, large_search: false },
-      reasons: ["Live providers are switched off (Settings → Provider mode). Demo mode is active."], limits: null }));
+      reasons: ["No Apify token is saved. Add it in Settings → Apify token."], limits: null }));
     renderApp("/discover");
     await userEvent.selectOptions(await screen.findByLabelText("Discovery source"), "manual");
     await userEvent.type(screen.getByLabelText("Usernames"), "@someone");
@@ -237,7 +237,7 @@ describe("discover", () => {
     await userEvent.click(screen.getByRole("button", { name: "Run search" }));
     const dialog = await screen.findByRole("dialog", { name: "Confirm external calls" });
     expect(within(dialog).getByText("Apify profile and reel collection")).toBeInTheDocument();
-    expect(within(dialog).getByText(/Live providers are switched off/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/No Apify token is saved/)).toBeInTheDocument();
     expect(within(dialog).getByText(/no cost estimate is available/)).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Run without collection" })).toBeInTheDocument();
     expect(calls.filter((c) => c.url === "/api/discovery/run")).toHaveLength(1);
@@ -272,14 +272,14 @@ describe("discover", () => {
 describe("review, campaigns and exports", () => {
   it("approves a creator from the Needs Review queue", async () => {
     signedIn();
-    const waiting = creator({ id: 2, username: "demo_fitness_priya", verdict: "needs_review", crm_status: "Needs Review" });
+    const waiting = creator({ id: 2, username: "fake_fitness_priya", verdict: "needs_review", crm_status: "Needs Review" });
     routes.set("GET /api/creators", () => ({ total: 1, page: 1, page_size: 25, items: [waiting] }));
     routes.set("PATCH /api/creators/2", () => ({ ...waiting, crm_status: "Qualified" }));
     renderApp("/review");
     expect(await screen.findByRole("heading", { name: "Needs Review" })).toBeInTheDocument();
     await waitFor(() => expect(calls.find((c) => c.url === "/api/creators")?.params?.verdict).toBe("needs_review"));
     await userEvent.click(await screen.findByRole("button", { name: "Approve" }));
-    expect(await screen.findByText("@demo_fitness_priya moved to Qualified.")).toBeInTheDocument();
+    expect(await screen.findByText("@fake_fitness_priya moved to Qualified.")).toBeInTheDocument();
   });
 
   it("creates a campaign for a client", async () => {
@@ -310,5 +310,18 @@ describe("review, campaigns and exports", () => {
     routes.set("GET /api/creators", () => ({ total: 0, page: 1, page_size: 25, items: [] }));
     renderApp("/creators");
     expect(await screen.findByText("No creators match")).toBeInTheDocument();
+  });
+});
+
+describe("live only", () => {
+  it("offers no demo source and defaults to hashtag search with Apify", async () => {
+    signedIn();
+    renderApp("/discover");
+    const source = await screen.findByLabelText("Discovery source");
+    expect(source).toHaveValue("hashtag");
+    expect(screen.getByLabelText("Profile data provider")).toHaveValue("apify");
+    const options = within(source).getAllByRole("option").map((o) => o.textContent ?? "");
+    expect(options.some((o) => /demo/i.test(o))).toBe(false);
+    expect(screen.queryByText(/demo/i)).not.toBeInTheDocument();
   });
 });

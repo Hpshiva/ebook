@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Badge, Button, Card, Empty, ErrorNote, Notice, PageHeader, SkeletonRows, Stat, Table, Td } from "../components/ui";
+import { Button, Card, Empty, ErrorNote, Notice, PageHeader, SkeletonRows, Stat, Table, Td } from "../components/ui";
 import { useLoad } from "../hooks/useLoad";
 import { api } from "../services/api";
 import type { Budget, Settings } from "../types";
 import { dateTime, inr, num, usd } from "../utils/format";
 
 interface Usage {
-  searches: number; demo_searches: number; profiles_requested: number; profiles_collected: number; profiles_cached: number;
+  searches: number; profiles_requested: number; profiles_collected: number; profiles_cached: number;
   profiles_failed: number; actor_runs: number; estimated_cost_usd: number | null; actual_cost_usd: number | null;
   best_known_cost_usd: number; cost_per_profile_usd: number | null; cost_per_qualified_usd: number | null;
   estimated_cost_inr: number | null; actual_cost_inr: number | null; best_known_cost_inr: number | null;
@@ -15,8 +15,8 @@ interface Usage {
 interface Report {
   month: Usage; all_time: Usage; budget: Budget; fx: Settings["fx"]; apify_pricing: Settings["apify_pricing"];
   apify_limits: { limit_usd: number; used_usd: number; remaining_usd: number } | null; provider_note: string | null;
-  provider_mode: string; apify_token_configured: boolean; max_profiles_per_search: number;
-  recent_runs: { id: number; created_at: string; source: string; provider: string; is_demo: boolean; requested: number; collected: number;
+  apify_token_configured: boolean; max_profiles_per_search: number;
+  recent_runs: { id: number; created_at: string; source: string; provider: string; requested: number; collected: number;
     cached: number; qualified: number; actor_runs: number; est_cost_usd: number | null; actual_cost_usd: number | null }[];
 }
 
@@ -34,9 +34,7 @@ export function Costs() {
       <PageHeader title="Cost & Usage" subtitle="What searches have used this month. Estimates and provider-reported charges are shown separately." />
       <div className="mb-4 space-y-2">
         <ErrorNote error={error} />
-        {r.provider_mode === "mock"
-          ? <Notice tone="success">Demo mode is on. No external provider is called, so the running cost is ₹0.</Notice>
-          : <Notice tone="warn">Live mode is on. Every external search still asks for confirmation first.</Notice>}
+        <Notice>Every search that uses Apify shows an estimate and asks for confirmation first.</Notice>
         {r.budget.level === "blocked" && <Notice tone="error">Cash spend is over the monthly budget. Paid collection is blocked.</Notice>}
         {r.budget.level === "warning" && <Notice tone="warn">Cash spend has reached {r.budget.percent_of_budget}% of the monthly budget.</Notice>}
       </div>
@@ -53,7 +51,7 @@ export function Costs() {
         <Stat label="Apify Actor runs" value={num(m.actor_runs)} hint="Runs are not the same as profiles" />
         <Stat label="Cost per collected profile" value={both(m.cost_per_profile_usd, m.cost_per_profile_inr)} hint="Live searches only" />
         <Stat label="Cost per qualified lead" value={both(m.cost_per_qualified_usd, m.cost_per_qualified_inr)} hint="Live searches only" />
-        <Stat label="Searches this month" value={num(m.searches)} hint={`${num(m.demo_searches)} demo`} />
+        <Stat label="Searches this month" value={num(m.searches)} />
         <Stat label="Max profiles per search" value={num(r.max_profiles_per_search)} hint="Change in Settings" />
       </div>
 
@@ -88,7 +86,7 @@ export function Costs() {
           {r.recent_runs.map((x) => (
             <tr key={x.id}>
               <Td className="whitespace-nowrap text-xs text-slate-500">{dateTime(x.created_at)}</Td>
-              <Td className="text-xs">{x.source} / {x.provider} {x.is_demo && <Badge tone="violet">DEMO DATA</Badge>}</Td>
+              <Td className="text-xs">{x.source} / {x.provider}</Td>
               <Td className="tabular-nums">{x.requested}</Td><Td className="tabular-nums">{x.collected}</Td><Td className="tabular-nums">{x.cached}</Td>
               <Td className="tabular-nums">{x.qualified}</Td><Td className="tabular-nums">{x.actor_runs}</Td>
               <Td className="tabular-nums">{usd(x.est_cost_usd)}</Td><Td className="tabular-nums">{usd(x.actual_cost_usd)}</Td>

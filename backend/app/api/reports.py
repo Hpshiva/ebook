@@ -30,7 +30,7 @@ def _range(date_from: date | None, date_to: date | None):
 
 @router.get("/dashboard")
 def dashboard(db: Session = Depends(get_db), _: User = Depends(team_user), date_from: date | None = None,
-              date_to: date | None = None, campaign_id: int | None = None, include_demo: bool = True):
+              date_to: date | None = None, campaign_id: int | None = None):
     start, end = _range(date_from, date_to)
     q = db.query(Creator)
     if campaign_id:
@@ -39,8 +39,6 @@ def dashboard(db: Session = Depends(get_db), _: User = Depends(team_user), date_
         q = q.filter(Creator.created_at >= start)
     if end:
         q = q.filter(Creator.created_at < end)
-    if not include_demo:
-        q = q.filter(Creator.is_demo.is_(False))
     creators = q.all()
     ids = {c.id for c in creators}
     with_email = {cid for (cid,) in db.query(CreatorContact.creator_id).filter(CreatorContact.type == "email")} & ids
@@ -53,7 +51,7 @@ def dashboard(db: Session = Depends(get_db), _: User = Depends(team_user), date_
     if end:
         runs = runs.filter(SearchRun.created_at < end)
     runs = runs.all()
-    live = [r for r in runs if not r.is_demo]
+    live = runs
     best_cost = sum((r.actual_cost_usd if r.actual_cost_usd is not None else (r.est_cost_usd or 0)) for r in live)
 
     messages = [m for m in db.query(OutreachMessage).all() if m.creator_id in ids]
@@ -63,7 +61,6 @@ def dashboard(db: Session = Depends(get_db), _: User = Depends(team_user), date_
     settings = get_settings(db)
     return {
         "creators_total": len(creators),
-        "demo_creators": sum(1 for c in creators if c.is_demo),
         "qualified": sum(1 for c in creators if c.verdict == "qualified"),
         "needs_review": sum(1 for c in creators if c.verdict == "needs_review"),
         "rejected": sum(1 for c in creators if c.verdict == "rejected"),
@@ -76,14 +73,13 @@ def dashboard(db: Session = Depends(get_db), _: User = Depends(team_user), date_
         "follow_ups_due": sum(1 for c in creators if c.follow_up_date and c.follow_up_date <= date.today()),
         "cost": {"best_known_usd": round(best_cost, 4), "best_known_inr": costs.to_inr(best_cost, settings),
                  "has_actuals": any(r.actual_cost_usd is not None for r in live), "live_searches": len(live)},
-        "provider_mode": settings["provider_mode"],
+        "apify_token_configured": bool(config.apify_token),
     }
 
 
 @router.get("/export")
 def export(db: Session = Depends(get_db), user: User = Depends(current_user), fmt: str = "xlsx",
-           scope: str = "qualified", ids: str = "", run_id: int | None = None, campaign_id: int | None = None,
-           include_demo: bool = True):
+           scope: str = "qualified", ids: str = "", run_id: int | None = None, campaign_id: int | None = None):
     if fmt not in ("csv", "xlsx"):
         raise HTTPException(422, "Format must be csv or xlsx")
     campaign_name = ""
@@ -109,8 +105,6 @@ def export(db: Session = Depends(get_db), user: User = Depends(current_user), fm
         creators = db.query(Creator).all()
     else:
         raise HTTPException(422, "Unknown export scope")
-    if not include_demo:
-        creators = [c for c in creators if not c.is_demo]
     creators.sort(key=lambda c: c.lead_score or 0, reverse=True)
     # Client exports never include our internal notes.
     rows = [creator_row(c, campaign_name, notes="" if user.role == "client" else None) for c in creators]
@@ -144,12 +138,12 @@ def cost_report(db: Session = Depends(get_db), _: User = Depends(team_user), che
         "month": month, "all_time": all_time,
         "budget": costs.budget_state(db, settings, 0.0, limits["limit_usd"] if limits else None),
         "fx": settings["fx"], "apify_pricing": settings["apify_pricing"], "apify_limits": limits,
-        "provider_note": provider_note, "provider_mode": settings["provider_mode"],
+        "provider_note": provider_note,
         "apify_token_configured": bool(config.apify_token),
         "max_profiles_per_search": settings["max_profiles_per_search"],
         "recent_runs": [
             {"id": r.id, "created_at": r.created_at.isoformat(), "source": r.discovery_source,
-             "provider": r.profile_provider, "is_demo": r.is_demo, "requested": r.requested,
+             "provider": r.profile_provider, "requested": r.requested,
              "collected": r.collected, "cached": r.cached, "qualified": r.qualified, "actor_runs": r.actor_runs,
              "est_cost_usd": r.est_cost_usd, "actual_cost_usd": r.actual_cost_usd}
             for r in db.query(SearchRun).order_by(SearchRun.created_at.desc()).limit(25).all()],
@@ -163,7 +157,6 @@ class SettingsPatch(BaseModel):
     reels_per_creator: int | None = None
     max_profiles_per_search: int | None = None
     collect_phone: bool | None = None
-    provider_mode: str | None = None
     monthly_budget_inr: float | None = None
     budget_warn_pct: float | None = None
     fx: dict | None = None
@@ -220,8 +213,6 @@ def remove_apify_token(db: Session = Depends(get_db), admin: User = Depends(admi
 @router.put("/settings")
 def write_settings(body: SettingsPatch, db: Session = Depends(get_db), admin: User = Depends(admin_user)):
     patch = body.model_dump(exclude_none=True)
-    if "provider_mode" in patch and patch["provider_mode"] not in ("mock", "live"):
-        raise HTTPException(422, "Provider mode must be mock or live")
     for key, low, high in (("cache_days", 0, 365), ("max_profiles_per_search", 1, 500), ("reels_per_creator", 2, 30),
                            ("monthly_budget_inr", 0, 10_000_000), ("budget_warn_pct", 1, 100)):
         if key in patch and not low <= patch[key] <= high:

@@ -9,7 +9,6 @@ Every figure is marked **Actual** (charged or measured), **Published** (read fro
 | Item | Cost | Type |
 |---|---|---|
 | Development tools and all automated tests | ₹0 | Actual |
-| Demo-mode searches | ₹0 | Actual |
 | Live Apify tests (70 hashtag results, 91 profiles, 93 reels) | $0.668 of the free credit (about ₹60 in value) | Actual, from the Apify account |
 | Cash paid to anyone | **₹0** | Actual |
 
@@ -167,11 +166,10 @@ With the monthly budget set to ₹0 (the default) the app will not go past the f
 
 ## How the app protects the budget
 
-- Demo mode by default; live mode is an admin setting.
 - Every external search shows an upper-bound estimate and needs confirmation.
 - Reel views are bought only for creators that pass the cheap checks, and never twice.
 - Maximum profiles per search (default 50). 14-day cache; refresh only on request.
 - Reads Apify's remaining allowance and refuses a search that would exceed it.
 - Blocks spend above the monthly cash budget and warns at 80%.
-- If Apify reports the allowance is used up, live mode switches back to demo mode automatically.
+- If Apify reports the allowance is used up, the search stops and says so. No payment is made.
 - Estimates and Apify's own charges are stored and shown separately. In both live searches they matched to the cent ($0.0192 and $0.196).

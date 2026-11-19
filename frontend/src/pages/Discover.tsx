@@ -16,7 +16,7 @@ export function Discover() {
   const meta = useLoad(() => api.get<Meta>("/api/meta"));
   const campaigns = useLoad(() => api.get<Campaign[]>("/api/campaigns"));
   const [form, setForm] = useState({
-    discovery_source: "demo", profile_provider: "demo", niche: "fitness", sub_niche: "", country: "", language: "",
+    discovery_source: "hashtag", profile_provider: "apify", niche: "fitness", sub_niche: "", country: "", language: "",
     category: "", usernames: "", hashtags: "", campaign_id: "", max_profiles: "", refresh: false,
   });
   const [filters, setFilters] = useState<Settings["filters"] | null>(null);
@@ -32,13 +32,13 @@ export function Discover() {
     if (settings.data && !filters) setFilters(settings.data.filters);
   }, [settings.data, filters]);
 
-  const live = settings.data?.provider_mode === "live";
+  const tokenMissing = settings.data ? !settings.data.apify_token_configured : false;
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
   const setFilter = (patch: Partial<Settings["filters"]>) => setFilters((f) => (f ? { ...f, ...patch } : f));
 
   const changeSource = (source: string) => {
-    // Keep the pairing sensible: demo data only exists in the demo provider.
-    const provider = source === "demo" ? "demo" : source === "hashtag" ? "apify" : form.profile_provider === "demo" ? "none" : form.profile_provider;
+    // Hashtag results always need profile data, so they always pair with Apify.
+    const provider = source === "hashtag" ? "apify" : form.profile_provider;
     set({ discovery_source: source, profile_provider: provider });
   };
 
@@ -87,8 +87,8 @@ export function Discover() {
   return (
     <>
       <PageHeader title="Discover Creators" subtitle="Find creators, collect public profile data and qualify them against your filters." />
-      {!live && (
-        <div className="mb-4"><Notice>Demo mode: results are fictional DEMO DATA and free. Manual import also works. Live search needs to be enabled in Settings.</Notice></div>
+      {tokenMissing && (
+        <div className="mb-4"><Notice tone="warn">No Apify token is saved, so searches cannot collect real data yet. Add it in Settings → Apify token.</Notice></div>
       )}
       <form onSubmit={onSubmit} className="space-y-4">
         <Card title="What to search">
@@ -96,19 +96,16 @@ export function Discover() {
             <Field label="Discovery source">
               <Select aria-label="Discovery source" value={form.discovery_source} onChange={(e) => changeSource(e.target.value)}
                 options={[
-                  { value: "demo", label: "Demo data (free, fictional)" },
+                  { value: "hashtag", label: "Instagram hashtag search (Apify)" },
                   { value: "manual", label: "Manual import (usernames / URLs)" },
-                  { value: "hashtag", label: `Instagram hashtag search via Apify${live ? "" : " (live mode off)"}` },
-                  { value: "duckduckgo", label: `DuckDuckGo search, often blocked${live ? "" : " (live mode off)"}` },
+                  { value: "duckduckgo", label: "DuckDuckGo search, often blocked" },
                 ]} />
             </Field>
             <Field label="Profile data provider">
               <Select aria-label="Profile data provider" value={form.profile_provider} onChange={(e) => set({ profile_provider: e.target.value })}
-                options={form.discovery_source === "demo"
-                  ? [{ value: "demo", label: "Demo data" }]
-                  : [{ value: "none", label: "None (save usernames only)" },
-                     { value: "apify", label: `Apify${live ? "" : " (live mode off)"}` },
-                     { value: "demo", label: "Demo data (demo_ usernames only)" }]} />
+                options={form.discovery_source === "hashtag"
+                  ? [{ value: "apify", label: "Apify" }]
+                  : [{ value: "apify", label: "Apify" }, { value: "none", label: "None (save usernames only)" }]} />
             </Field>
             <Field label="Niche">
               <Input aria-label="Niche" list="niche-list" value={form.niche} onChange={(e) => set({ niche: e.target.value })} placeholder="e.g. fitness" />
@@ -209,7 +206,7 @@ export function Discover() {
             <Stat label="Needs review" value={run.needs_review} tone="amber" />
             <Stat label="Rejected" value={run.rejected} tone="red" />
           </div>
-          {run.messages.map((m) => <Notice key={m} tone={m.startsWith("DEMO DATA") ? "info" : "warn"}>{m}</Notice>)}
+          {run.messages.map((m) => <Notice key={m} tone="warn">{m}</Notice>)}
           {flash && <Notice tone="success">{flash}</Notice>}
 
           <div className="flex flex-wrap items-center justify-between gap-3">

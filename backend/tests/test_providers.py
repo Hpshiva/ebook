@@ -4,7 +4,6 @@ import requests
 
 from app.integrations.apify_provider import ApifyClient, ApifyProfiles
 from app.integrations.base import FreeAllowanceExhausted, ProviderAuthError, ProviderError
-from app.integrations.mock_provider import DEMO_PROFILES, MockDiscovery, MockProfiles
 from app.integrations.search_discovery import (DuckDuckGoDiscovery, ManualDiscovery, parse_ddg_html,
                                                parse_followers, parse_username_list, username_from_url)
 
@@ -224,24 +223,17 @@ def test_manual_import_respects_limit():
     assert [h.username for h in found.handles] == ["a", "b"] and "first 2 of 4" in found.messages[0]
 
 
-# ---------------------------------------------------------------------------- demo data
-def test_demo_data_is_clearly_fictional():
-    assert len(DEMO_PROFILES) == 72
-    for username, raw in DEMO_PROFILES.items():
-        assert username.startswith("demo_") and raw["isDemo"] is True and "(Demo)" in raw["fullName"]
+# ------------------------------------------------------------------- test fixtures
+def test_test_fixtures_are_clearly_fictional():
+    from .fakes import FAKE_PROFILES, FakeProfiles
+
+    assert len(FAKE_PROFILES) == 72
+    for username, raw in FAKE_PROFILES.items():
+        assert username.startswith("fake_")
         assert "@" not in raw["biography"] or ".example" in raw["biography"]
-
-
-def test_demo_discovery_filters_and_labels():
-    found = MockDiscovery().discover({"niche": "Fitness", "country": "india"}, limit=50)
-    assert len(found.handles) == 2 and found.messages[0].startswith("DEMO DATA")
-    assert "No DEMO DATA matches" in " ".join(MockDiscovery().discover({"niche": "astrology"}, 50).messages)
-
-
-def test_demo_provider_never_invents_data_for_real_usernames():
-    result = MockProfiles().fetch(["demo_fitness_aarav", "a_real_person"])
+    result = FakeProfiles().fetch(["fake_fitness_aarav", "a_real_person"])
     assert len(result.profiles) == 1 and result.failed == ["a_real_person"]
-    assert "nothing was invented" in result.messages[0]
+
 
 
 # ------------------------------------------------------------------ hashtag discovery

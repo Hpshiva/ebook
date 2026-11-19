@@ -29,9 +29,36 @@ def _add_missing_columns() -> None:
                     conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {kind}"))
 
 
+def _remove_demo_records() -> None:
+    """Demo mode was removed. Delete the fictional demo creators and demo searches
+    left in an existing database (with their contacts, notes, links and drafts)."""
+    from .core.db import SessionLocal
+    from .models import Creator, SearchResult, SearchRun, Setting
+
+    db = SessionLocal()
+    try:
+        demo = db.query(Creator).filter(Creator.is_demo.is_(True)).all()
+        if demo:
+            ids = [c.id for c in demo]
+            db.query(SearchResult).filter(SearchResult.creator_id.in_(ids)).delete(synchronize_session=False)
+            for creator in demo:
+                db.delete(creator)
+        for run in db.query(SearchRun).filter(SearchRun.is_demo.is_(True)).all():
+            db.delete(run)
+        stale = db.get(Setting, "provider_mode")
+        if stale:
+            db.delete(stale)
+        db.commit()
+        if demo:
+            logging.getLogger("creator_finder").info("Removed %d demo creator record(s)", len(demo))
+    finally:
+        db.close()
+
+
 def create_app() -> FastAPI:
     Base.metadata.create_all(engine)
     _add_missing_columns()
+    _remove_demo_records()
     app = FastAPI(title="Creator Finder API", version="1.0.0")
     app.add_middleware(CORSMiddleware, allow_origins=config.cors_origins, allow_credentials=False,
                        allow_methods=["*"], allow_headers=["*"])
